@@ -1,0 +1,2289 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>מערכת הצעות מחיר הרצאה</title>
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoi מערכת הצעות מחיר הרצאהIiwic2hvcnRfbmFtZSI6IuGHp+GHlOGHkCIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMDc2MDViIiwidGhlbWVfY29sb3IiOiIjMDc2MDViIn0=">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="הצעות מחיר">
+<meta name="theme-color" content="#07605b">
+<script>
+// יצירת אייקון דינמי
+(function(){
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+    <rect width="192" height="192" rx="40" fill="#07605b"/>
+    <g transform="translate(96,96)" fill="white">
+      <!-- תותבת רגל מתחת לברך - פשוטה וברורה -->
+      <!-- שוק -->
+      <rect x="-12" y="-55" width="24" height="60" rx="8" fill="white"/>
+      <!-- ברך -->
+      <ellipse cx="0" cy="-55" rx="18" ry="12" fill="white"/>
+      <!-- קרסול -->
+      <rect x="-16" y="8" width="32" height="14" rx="6" fill="white"/>
+      <!-- כף רגל -->
+      <ellipse cx="8" cy="26" rx="26" ry="10" fill="white"/>
+    </g>
+  </svg>`;
+  const url = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+  // Apple touch icon
+  const link = document.createElement('link');
+  link.rel = 'apple-touch-icon';
+  link.href = url;
+  document.head.appendChild(link);
+  // favicon
+  const fav = document.createElement('link');
+  fav.rel = 'icon';
+  fav.href = url;
+  document.head.appendChild(fav);
+})();
+</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f2f0eb;
+  --card: #ffffff;
+  --border: #e2e0d8;
+  --text: #111;
+  --muted: #888;
+  --light: #aaa;
+  --accent: #111;
+  --accent-fg: #fff;
+  --green: #1a6b3a;
+  --green-bg: #e8f5ee;
+  --green-light: #a5d6bc;
+  --orange: #c45000;
+  --orange-bg: #fff0e6;
+  --red: #c0392b;
+  --red-bg: #fdecea;
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+
+body {
+  font-family: 'Assistant', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  direction: rtl;
+  text-align: right;
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+/* ── SCREENS ── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--accent);
+  color: #fff;
+  padding: 14px 16px;
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.topbar-title { font-size: 16px; font-weight: 800; }
+.topbar-sub { font-size: 11px; color: #888; margin-top: 1px; }
+.back-btn {
+  background: none; border: none; color: #fff;
+  font-size: 22px; cursor: pointer; padding: 4px 8px 4px 0;
+  font-family: 'Assistant', sans-serif;
+}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #fff; border-top: 1px solid var(--border);
+  display: flex; z-index: 50;
+}
+.nav-btn {
+  flex: 1; border: none; background: none; cursor: pointer;
+  padding: 10px 4px 12px;
+  font-family: 'Assistant', sans-serif;
+  font-size: 11px; font-weight: 700;
+  color: var(--muted);
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  transition: color .15s;
+}
+.nav-btn.active { color: var(--text); }
+.nav-icon { font-size: 20px; line-height: 1; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--card);
+  margin: 12px 12px 0;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.card-title {
+  font-size: 10px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--light);
+  padding: 10px 16px 8px;
+  border-bottom: 1px solid var(--border);
+  background: #fafaf8;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* ── FIELDS ── */
+.field { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.field:last-child { border-bottom: none; }
+.field label {
+  display: block; font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--light); margin-bottom: 3px;
+}
+.field input, .field textarea, .field select {
+  font-family: 'Assistant', sans-serif;
+  font-size: 16px; font-weight: 600; color: var(--text);
+  border: none; width: 100%; background: transparent;
+  outline: none; direction: rtl; text-align: right;
+  -webkit-appearance: none; appearance: none;
+}
+.field textarea { resize: none; min-height: 44px; line-height: 1.5; }
+.field input::placeholder, .field textarea::placeholder { color: #ccc; font-weight: 400; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; }
+.row2 .field { border-bottom: none; }
+.row2 .field:last-child { border-right: 1px solid var(--border); }
+
+/* ── ITEMS ── */
+.item-card { padding: 13px 16px; border-bottom: 1px solid var(--border); }
+.item-card:last-child { border-bottom: none; }
+.item-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.item-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--light); }
+.del-btn { font-size: 18px; color: #ddd; border: none; background: none; cursor: pointer; line-height: 1; }
+.item-desc {
+  font-family: 'Assistant', sans-serif; font-size: 16px; font-weight: 600;
+  color: var(--text); border: none; width: 100%; background: transparent;
+  outline: none; direction: rtl; text-align: right; margin-bottom: 10px;
+}
+.item-desc::placeholder { color: #ccc; font-weight: 400; }
+.nums { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.nums label {
+  font-size: 10px; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--light);
+  display: block; margin-bottom: 3px; text-align: center;
+}
+.nums input {
+  font-family: 'Assistant', sans-serif; font-size: 17px; font-weight: 800;
+  color: var(--text); border: none; width: 100%;
+  background: #f4f4f1; outline: none; padding: 8px 4px;
+  border-radius: var(--radius-sm); text-align: center; -webkit-appearance: none;
+}
+.nums .tot input { color: var(--muted); background: #efefec; font-weight: 600; }
+
+.add-item-btn {
+  font-family: 'Assistant', sans-serif; font-size: 14px; font-weight: 700;
+  color: var(--muted); background: none; border: 2px dashed var(--border);
+  width: calc(100% - 24px); margin: 12px; padding: 12px;
+  border-radius: var(--radius); cursor: pointer; display: block; text-align: center;
+}
+
+/* ── SUMMARY ── */
+.sum-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 15px;
+}
+.sum-row:last-child { border-bottom: none; font-size: 18px; font-weight: 800; }
+.sl { color: var(--muted); font-weight: 500; }
+.disc-wrap { display: flex; align-items: center; gap: 4px; }
+.disc-wrap input {
+  font-family: 'Assistant', sans-serif; font-size: 16px; font-weight: 700;
+  border: none; background: #f4f4f1; outline: none; padding: 6px 10px;
+  border-radius: var(--radius-sm); width: 56px; text-align: center; -webkit-appearance: none;
+}
+
+/* ── BOTTOM BAR ── */
+.bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #fff; border-top: 1px solid var(--border);
+  padding: 10px 12px; display: flex; gap: 8px; z-index: 60;
+}
+.btn {
+  font-family: 'Assistant', sans-serif; font-size: 15px; font-weight: 700;
+  padding: 14px 0; border: none; border-radius: 12px; cursor: pointer;
+}
+.btn-main  { background: var(--accent); color: #fff; flex: 2; }
+.btn-sec   { background: #efefec; color: #333; flex: 1; }
+.btn-green { background: var(--green); color: #fff; flex: 2; }
+.btn-outline { background: #fff; color: var(--text); border: 1.5px solid var(--border); flex: 1; }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-block; font-size: 10px; font-weight: 700;
+  padding: 2px 8px; border-radius: 6px; letter-spacing: 0;
+}
+.badge-gray   { background: #f0f0ec; color: var(--muted); }
+.badge-green  { background: var(--green-bg); color: var(--green); }
+.badge-orange { background: var(--orange-bg); color: var(--orange); }
+.badge-purple { background: #f3e5f5; color: #6a1b9a; }
+
+/* ── HOME SCREEN ── */
+.home-header {
+  padding: 20px 16px 8px;
+  font-size: 13px; color: var(--muted); font-weight: 600;
+  letter-spacing: .05em; text-transform: uppercase;
+}
+.quote-item {
+  background: var(--card);
+  margin: 0 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  active: opacity .8;
+}
+.quote-item:active { opacity: .7; }
+.qi-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.qi-client { font-size: 16px; font-weight: 700; }
+.qi-date { font-size: 12px; color: var(--muted); }
+.qi-bottom { display: flex; justify-content: space-between; align-items: center; }
+.qi-desc { font-size: 13px; color: var(--muted); }
+.qi-amount { font-size: 16px; font-weight: 800; }
+
+.empty-state {
+  text-align: center; padding: 60px 24px;
+  color: var(--muted); font-size: 15px; line-height: 1.7;
+}
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+.new-quote-btn {
+  font-family: 'Assistant', sans-serif;
+  font-size: 16px; font-weight: 800;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: var(--radius);
+  width: calc(100% - 24px); margin: 12px;
+  padding: 16px; cursor: pointer; display: block; text-align: center;
+}
+
+/* ── DETAIL SCREEN ── */
+.detail-actions {
+  padding: 12px;
+  display: flex; gap: 8px;
+}
+.action-btn {
+  font-family: 'Assistant', sans-serif; font-size: 14px; font-weight: 700;
+  border: none; border-radius: var(--radius-sm); cursor: pointer;
+  padding: 12px 0; flex: 1; text-align: center;
+}
+.action-pdf  { background: #f0f0ec; color: var(--text); }
+.action-inv  { background: var(--green-bg); color: var(--green); }
+.action-rec  { background: #f3e5f5; color: #6a1b9a; }
+.action-edit { background: #fff; color: var(--text); border: 1.5px solid var(--border); }
+.action-del  { background: var(--red-bg); color: var(--red); }
+
+.detail-card {
+  background: var(--card);
+  margin: 0 12px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.detail-row {
+  display: flex; justify-content: space-between;
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.detail-row:last-child { border-bottom: none; }
+.dr-label { color: var(--muted); font-weight: 500; }
+.dr-val { font-weight: 700; }
+
+.items-table { width: 100%; border-collapse: collapse; }
+.items-table th {
+  font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--light);
+  padding: 10px 16px 8px; text-align: right; border-bottom: 1px solid var(--border);
+}
+.items-table td { padding: 11px 16px; font-size: 14px; border-bottom: 1px solid var(--border); }
+.items-table tr:last-child td { border-bottom: none; }
+.tc { text-align: center; }
+
+/* ── CLIENTS SCREEN ── */
+.client-item {
+  background: var(--card);
+  margin: 0 12px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  cursor: pointer;
+}
+.client-item:active { opacity: .7; }
+.ci-name { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+.ci-sub { font-size: 12px; color: var(--muted); }
+.ci-count { font-size: 12px; color: var(--muted); background: #f0f0ec; padding: 3px 9px; border-radius: 6px; font-weight: 700; }
+
+/* ── OVERLAY ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.5); z-index: 100; align-items: flex-end;
+}
+.overlay.open { display: flex; }
+.sheet {
+  background: #fff; width: 100%;
+  border-radius: 22px 22px 0 0;
+  padding: 24px 20px 44px;
+  direction: rtl; text-align: right;
+  max-height: 80vh; overflow-y: auto;
+}
+.sheet-title { font-size: 18px; font-weight: 800; text-align: center; margin-bottom: 20px; }
+.sheet-step { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; font-size: 14px; line-height: 1.5; }
+.step-n {
+  background: var(--accent); color: #fff; min-width: 26px; height: 26px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; flex-shrink: 0;
+}
+.sheet-btn {
+  font-family: 'Assistant', sans-serif; font-size: 15px; font-weight: 700;
+  width: 100%; padding: 14px; border: none; border-radius: 12px;
+  margin-top: 8px; cursor: pointer; display: block; text-align: center;
+}
+.sheet-go  { background: var(--accent); color: #fff; }
+.sheet-can { background: #efefec; color: #333; margin-top: 8px; }
+
+/* ── INV EXTRAS ── */
+.extras-section {
+  margin: 0 12px 0;
+}
+.extra-item-card { padding: 13px 16px; border-bottom: 1px solid var(--border); background: #fffbf6; }
+.extra-item-card:last-child { border-bottom: none; }
+
+/* ── CLIENT PICKER ── */
+.client-pick-item {
+  padding: 13px 16px; border-bottom: 1px solid var(--border); cursor: pointer;
+  font-size: 15px; font-weight: 600;
+}
+.client-pick-item:last-child { border-bottom: none; }
+.client-pick-item:active { background: #f8f8f5; }
+
+/* ── STATUS ── */
+.status-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700; padding: 4px 10px;
+  border-radius: 20px; cursor: pointer;
+}
+.status-pending  { background: #fff8e1; color: #f57f17; }
+.status-approved { background: #e8f5ee; color: #1a6b3a; }
+.status-rejected { background: #fdecea; color: #c0392b; }
+.status-invoiced { background: #e3f2fd; color: #1565c0; }
+.status-paid     { background: #f3e5f5; color: #6a1b9a; }
+
+.status-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  cursor: pointer; font-size: 15px; font-weight: 600;
+}
+.status-option:last-child { border-bottom: none; }
+.status-option:active { background: #f8f8f5; }
+.status-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── TRACKER ── */
+.tracker-row {
+  background: var(--card); margin: 0 12px 8px;
+  border-radius: var(--radius); border: 1px solid var(--border);
+  padding: 13px 16px; display: flex; align-items: center; gap: 10px;
+  cursor: pointer;
+}
+.tracker-row:active { opacity: .7; }
+.tracker-info { flex: 1; min-width: 0; }
+.tracker-client { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tracker-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.tracker-amount { font-size: 15px; font-weight: 800; flex-shrink: 0; }
+
+/* ── PRINT ── */
+.pdf-doc { display: none; }
+
+@media print {
+  @page { margin: 15mm 18mm; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  body { background: #fff; padding: 0; }
+  .screen, .topbar, .bottom-nav, .bottom-bar, .overlay { display: none !important; }
+  .pdf-doc { display: block !important; }
+
+  .pdf-title { font-size: 54px; font-weight: 800; letter-spacing: -.04em; line-height: 1; margin-bottom: 4px; }
+  .pdf-biz-name { font-size: 16px; font-weight: 800; margin-bottom: 2px; }
+  .pdf-biz-detail { font-size: 12px; color: #666; line-height: 1.7; }
+  .pdf-divider { border-top: 3px solid #111; margin: 12px 0 20px; }
+  .pdf-ref { font-size: 12px; color: #555; background: #f5f5f2; padding: 8px 12px; border-radius: 6px; margin-bottom: 18px; display: none; }
+  .pdf-ref.show { display: block; }
+  .pdf-meta { display: grid !important; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px 18px; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid #ddd; }
+  .pdf-meta-item label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #aaa; display: block; margin-bottom: 2px; }
+  .pdf-meta-item .v { font-size: 13px; font-weight: 700; }
+  .pdf-table { width: 100%; border-collapse: collapse; }
+  .pdf-table thead tr { border-top: 2px solid #111; border-bottom: 2px solid #111; }
+  .pdf-table th { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; padding: 9px 8px; text-align: right; }
+  .pdf-table th.tc, .pdf-table td.tc { text-align: center; }
+  .pdf-table td { padding: 10px 8px; font-size: 13px; border-bottom: 1px solid #eee; }
+  .pdf-table tr.extra-row td { background: #fffbf6; }
+  .pdf-tag { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; }
+  .pdf-tag.base  { background: #e8f5ee; color: #1a6b3a; }
+  .pdf-tag.extra { background: #fff0e6; color: #c45000; }
+  .pdf-totals { display: flex !important; margin-top: 20px; padding-top: 16px; border-top: 2px solid #111; }
+  .pdf-totals-inner { min-width: 200px; }
+  .pdf-tot-row { display: flex !important; justify-content: space-between; gap: 36px; padding: 4px 0; border-bottom: 1px solid #eee; font-size: 13px; }
+  .pdf-tot-row:last-child { border-bottom: none; font-size: 16px; font-weight: 800; padding-top: 8px; }
+  .tl { color: #777; font-weight: 500; }
+  .tv { font-weight: 700; }
+  .pdf-notes { margin-top: 22px; padding-top: 16px; border-top: 1px solid #eee; }
+  .pdf-notes label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #aaa; display: block; margin-bottom: 4px; }
+  .pdf-notes .v { font-size: 12px; line-height: 1.7; color: #444; }
+  .pdf-bank { margin-top: 22px; padding: 12px 16px; background: #f5faf7; border-radius: 8px; border: 1px solid #c8e6d4; }
+  .pdf-bank-title { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #aaa; margin-bottom: 8px; }
+  .pdf-bank-row { display: flex !important; gap: 24px; font-size: 13px; }
+  .pdf-bank-item { }
+  .pdf-bank-item label { font-size: 10px; color: #aaa; font-weight: 700; display: block; margin-bottom: 1px; }
+  .pdf-bank-item .v { font-weight: 700; }
+  .pdf-sig { flex: 1; }
+  .pdf-sig label { font-size: 11px; color: #aaa; display: block; margin-bottom: 28px; }
+  .pdf-sig-line { border-top: 1.5px solid #222; margin-bottom: 5px; }
+  .pdf-sig-sub { font-size: 10px; color: #aaa; text-align: center; }
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<div id="loading-bar" style="display:none;position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#1a6b3a,#4caf7d);z-index:999;animation:loadpulse 1s infinite alternate"></div>
+<div id="toast" style="display:none;position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1a6b3a;color:#fff;padding:10px 20px;border-radius:20px;font-family:'Assistant',sans-serif;font-size:14px;font-weight:700;z-index:998;white-space:nowrap"></div>
+<style>@keyframes loadpulse{from{opacity:.6}to{opacity:1}}</style>
+
+<!-- ════════════════════════
+     HOME SCREEN
+════════════════════════ -->
+<div class="screen active" id="screen-home">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">מערכת הצעות מחיר</div>
+      <div class="topbar-sub">הרצאות</div>
+    </div>
+    <button onclick="loadData()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer">↻</button>
+  </div>
+
+  <div id="home-list">
+    <div class="empty-state" id="empty-msg">
+      <div class="empty-icon">📋</div>
+      עדיין אין הצעות מחיר.<br>לחץ על הכפתור למטה כדי להתחיל.
+    </div>
+  </div>
+
+  <button class="new-quote-btn" onclick="startNewQuote()">＋ הצעת מחיר חדשה</button>
+
+  <div style="height:80px"></div>
+</div>
+
+<!-- ════════════════════════
+     NEW / EDIT QUOTE SCREEN
+════════════════════════ -->
+<div class="screen" id="screen-form">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div>
+      <div class="topbar-title" id="form-topbar-title">הצעת מחיר חדשה</div>
+      <div class="topbar-sub" id="form-topbar-sub">מלא את הפרטים</div>
+    </div>
+    <div style="width:40px"></div>
+  </div>
+
+  <!-- client picker -->
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">
+      <span>פרטי לקוח</span>
+      <button onclick="openClientPicker()" style="background:none;border:none;font-family:'Assistant',sans-serif;font-size:12px;font-weight:700;color:#888;cursor:pointer">📂 שמור / טען</button>
+    </div>
+    <div class="field">
+      <label>שם הלקוח / הארגון</label>
+      <input type="text" id="f-client" placeholder="למשל: עיריית תל אביב">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>טלפון</label>
+        <input type="tel" id="f-cphone" placeholder="05X-XXXXXXX">
+      </div>
+      <div class="field">
+        <label>מייל</label>
+        <input type="email" id="f-cemail" placeholder="name@org.com">
+      </div>
+    </div>
+    <div class="field">
+      <label>ח.פ. / ע.מ. (אופציונלי)</label>
+      <input type="text" id="f-cid" placeholder="">
+    </div>
+  </div>
+
+  <!-- quote details -->
+  <div class="card">
+    <div class="card-title">פרטי הצעה</div>
+    <div class="row2">
+      <div class="field">
+        <label>תאריך הצעה</label>
+        <input type="text" id="f-qdate" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
+      </div>
+      <div class="field">
+        <label>מספר הצעה</label>
+        <input type="text" id="f-qnum" placeholder="2026-001">
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>תאריך ההרצאה</label>
+        <input type="text" id="f-ldate" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
+      </div>
+      <div class="field">
+        <label>בתוקף עד</label>
+        <input type="text" id="f-valid" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
+      </div>
+    </div>
+  </div>
+
+  <!-- items -->
+  <div class="card">
+    <div class="card-title">פירוט שירותים</div>
+    <div id="f-items-list"></div>
+  </div>
+  <button class="add-item-btn" onclick="addItem()">＋ הוסף שורה</button>
+
+  <!-- summary -->
+  <div class="card">
+    <div class="card-title">סיכום</div>
+    <div class="sum-row"><span class="sl">סכום ביניים</span><span id="f-sub">₪0</span></div>
+    <div class="sum-row">
+      <span class="sl">הנחה</span>
+      <div class="disc-wrap">
+        <input type="number" id="f-disc" value="0" min="0" max="100" oninput="calcForm()">
+        <span style="font-weight:700;color:var(--muted)">%</span>
+      </div>
+    </div>
+    <div class="sum-row"><span class="sl">סה״כ לתשלום</span><span id="f-grand" style="font-weight:800">₪0</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">צורת תשלום</div>
+    <div class="field">
+      <label>תנאי תשלום</label>
+      <input type="text" id="f-payment" placeholder="למשל: שוטף+30, מזומן, העברה בנקאית">
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">הערות</div>
+    <div class="field">
+      <textarea id="f-notes" placeholder="הערות נוספות..." rows="3"></textarea>
+    </div>
+  </div>
+
+  <div style="height:80px"></div>
+
+  <div class="bottom-bar">
+    <button class="btn btn-sec" onclick="goHome()">ביטול</button>
+    <button class="btn btn-main" onclick="saveQuote()">💾 שמור הצעה</button>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     DETAIL SCREEN
+════════════════════════ -->
+<div class="screen" id="screen-detail">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div>
+      <div class="topbar-title" id="d-topbar-name">—</div>
+      <div class="topbar-sub" id="d-topbar-sub">—</div>
+    </div>
+    <div style="width:40px"></div>
+  </div>
+
+  <div class="detail-actions" style="flex-direction:column;gap:8px">
+    <div style="display:flex;gap:8px">
+      <button class="action-btn action-pdf"  onclick="printDoc('quote')">📄 PDF הצעה</button>
+      <button class="action-btn action-inv"  onclick="openInvoiceFlow()">✅ חשבון עסקה</button>
+      <button class="action-btn action-rec"  onclick="openReceiptFlow()">🧾 קבלה</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="action-btn" style="flex:2;background:#e8f0fe;color:#1a73e8" onclick="addToCalendar()">📅 הוסף ליומן</button>
+      <button class="action-btn action-edit" onclick="editQuote()" style="flex:1">✏️ עריכה</button>
+      <button class="action-btn action-del"  onclick="deleteQuote()" style="flex:1">🗑 מחיקה</button>
+    </div>
+  </div>
+  <div style="padding:0 12px 0">
+    <button onclick="openStatusPicker()" id="detail-status-btn" style="font-family:'Assistant',sans-serif;font-size:14px;font-weight:700;border:none;background:none;cursor:pointer;padding:8px 0;width:100%;text-align:right">
+      סטטוס: <span id="detail-status-badge"></span>
+    </button>
+  </div>
+
+  <div id="d-content"></div>
+
+  <div style="height:20px"></div>
+</div>
+
+<!-- ════════════════════════
+     INVOICE SCREEN
+════════════════════════ -->
+<div class="screen" id="screen-invoice">
+  <div class="topbar">
+    <button class="back-btn" onclick="showScreen('screen-detail')">←</button>
+    <div>
+      <div class="topbar-title">חשבון עסקה</div>
+      <div class="topbar-sub" id="inv-topbar-sub">—</div>
+    </div>
+    <div style="width:40px"></div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">פרטי חשבון</div>
+    <div class="row2">
+      <div class="field">
+        <label>תאריך חשבון</label>
+        <input type="text" id="inv-date" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
+      </div>
+      <div class="field">
+        <label>מספר חשבון</label>
+        <input type="text" id="inv-num" placeholder="INV-2026-001">
+      </div>
+    </div>
+    <div class="field">
+      <label>תשלום עד תאריך</label>
+      <input type="text" id="inv-due" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>פריטים מהצעת המחיר</span><span class="badge badge-green">מאושר</span></div>
+    <div id="inv-base-items"></div>
+  </div>
+
+  <div class="card" id="inv-extras-card">
+    <div class="card-title">תוספות / שינויים</div>
+    <div id="inv-extra-list"></div>
+  </div>
+  <button class="add-item-btn" style="border-color:#f5c49a;color:var(--orange)" onclick="addExtraItem()">＋ הוסף תוספת</button>
+
+  <div class="card">
+    <div class="card-title">סיכום</div>
+    <div class="sum-row"><span class="sl">סכום הצעה</span><span id="inv-base-sub">₪0</span></div>
+    <div class="sum-row" id="inv-extra-row" style="display:none"><span class="sl">תוספות</span><span id="inv-extra-sub">₪0</span></div>
+    <div class="sum-row" id="inv-disc-row" style="display:none">
+      <span class="sl">הנחה</span>
+      <div class="disc-wrap">
+        <input type="number" id="inv-disc" value="0" min="0" max="100" oninput="calcInvoice()">
+        <span style="font-weight:700;color:var(--muted)">%</span>
+      </div>
+    </div>
+    <div class="sum-row"><span class="sl">סה״כ לתשלום</span><span id="inv-grand" style="font-weight:800">₪0</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">תנאי תשלום</div>
+    <div class="field">
+      <label>צורת תשלום</label>
+      <input type="text" id="inv-payment" placeholder="למשל: שוטף+30">
+    </div>
+  </div>
+
+  <div class="card" style="background:#f8fcf9;border-color:#c8e6d4">
+    <div class="card-title" style="background:#f0f9f4">פרטי בנק לתשלום</div>
+    <div class="detail-row" style="padding:11px 16px;border-bottom:1px solid var(--border);font-size:14px;display:flex;justify-content:space-between">
+      <span style="color:var(--muted)">בנק</span><span style="font-weight:700">הפועלים 12</span>
+    </div>
+    <div class="detail-row" style="padding:11px 16px;border-bottom:1px solid var(--border);font-size:14px;display:flex;justify-content:space-between">
+      <span style="color:var(--muted)">סניף</span><span style="font-weight:700">יקנעם 722</span>
+    </div>
+    <div class="detail-row" style="padding:11px 16px;font-size:14px;display:flex;justify-content:space-between">
+      <span style="color:var(--muted)">מספר חשבון</span><span style="font-weight:700">605765</span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">הערות</div>
+    <div class="field">
+      <textarea id="inv-notes" placeholder="הערות נוספות..." rows="2"></textarea>
+    </div>
+  </div>
+
+  <div style="height:80px"></div>
+
+  <div class="bottom-bar">
+    <button class="btn btn-outline" onclick="showScreen('screen-detail')">ביטול</button>
+    <button class="btn btn-green" onclick="printDoc('invoice')">📄 הפק PDF</button>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     RECEIPT SCREEN
+════════════════════════ -->
+<div class="screen" id="screen-receipt">
+  <div class="topbar">
+    <button class="back-btn" onclick="showScreen('screen-detail')">←</button>
+    <div>
+      <div class="topbar-title">קבלה</div>
+      <div class="topbar-sub" id="rec-topbar-sub">—</div>
+    </div>
+    <div style="width:40px"></div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">פרטי קבלה</div>
+    <div class="row2">
+      <div class="field">
+        <label>תאריך קבלה</label>
+        <input type="text" id="rec-date" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
+      </div>
+      <div class="field">
+        <label>מספר קבלה</label>
+        <input type="text" id="rec-num" placeholder="REC-2026-001">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">מקור / הפניה</div>
+    <div class="field">
+      <label>בהתאם ל (אופציונלי)</label>
+      <input type="text" id="rec-ref" placeholder="למשל: חשבון עסקה INV-2026-001">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">פירוט תשלום</div>
+    <div id="rec-items-list"></div>
+  </div>
+  <button class="add-item-btn" style="border-color:#d4b8f0;color:#6a1b9a" onclick="addRecItem()">＋ הוסף שורה</button>
+
+  <div class="card">
+    <div class="card-title">סיכום</div>
+    <div class="sum-row"><span class="sl">סה״כ התקבל</span><span id="rec-grand" style="font-weight:800;color:#6a1b9a">₪0</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">אמצעי תשלום</div>
+    <div class="field">
+      <label>אמצעי תשלום</label>
+      <select id="rec-method" style="font-family:'Assistant',sans-serif;font-size:16px;font-weight:600;color:var(--text);border:none;width:100%;background:transparent;outline:none;direction:rtl;text-align:right;-webkit-appearance:none;appearance:none">
+        <option value="העברה בנקאית">העברה בנקאית</option>
+        <option value="מזומן">מזומן</option>
+        <option value="צ׳ק">צ׳ק</option>
+        <option value="אשראי">אשראי</option>
+        <option value="ביט">ביט</option>
+        <option value="פייבוקס">פייבוקס</option>
+      </select>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>תאריך תשלום</label>
+        <input type="text" id="rec-pay-date" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
+      </div>
+      <div class="field">
+        <label>מס׳ אסמכתא / המחאה</label>
+        <input type="text" id="rec-ref-num" placeholder="אופציונלי">
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">הערות</div>
+    <div class="field">
+      <textarea id="rec-notes" placeholder="הערות נוספות..." rows="2"></textarea>
+    </div>
+  </div>
+
+  <div style="height:80px"></div>
+
+  <div class="bottom-bar">
+    <button class="btn btn-outline" onclick="showScreen('screen-detail')">ביטול</button>
+    <button class="btn" style="background:#6a1b9a;color:#fff;flex:2" onclick="generateReceiptPdf()">🧾 הורד קבלה PDF</button>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     TRACKER SCREEN
+════════════════════════ -->
+<div class="screen" id="screen-tracker">
+  <div class="topbar">
+    <button class="back-btn" onclick="goHome()">←</button>
+    <div>
+      <div class="topbar-title">מעקב הצעות</div>
+      <div class="topbar-sub">סטטוס כל ההצעות</div>
+    </div>
+    <div style="width:40px"></div>
+  </div>
+
+  <!-- פילטר שנה -->
+  <div style="padding:12px 12px 0;display:flex;gap:8px;overflow-x:auto" id="year-filter"></div>
+
+  <div id="tracker-list" style="margin-top:12px"></div>
+  <div style="height:80px"></div>
+</div>
+
+<!-- Status picker overlay -->
+<div class="overlay" id="overlay-status">
+  <div class="sheet">
+    <div class="sheet-title">עדכן סטטוס</div>
+    <div class="card" style="margin:0 0 12px">
+      <div class="status-option" onclick="setStatus('pending')">
+        <div class="status-dot" style="background:#f57f17"></div>
+        <span>ממתין לתשובה</span>
+      </div>
+      <div class="status-option" onclick="setStatus('approved')">
+        <div class="status-dot" style="background:#1a6b3a"></div>
+        <span>אושר</span>
+      </div>
+      <div class="status-option" onclick="setStatus('rejected')">
+        <div class="status-dot" style="background:#c0392b"></div>
+        <span>נדחה</span>
+      </div>
+      <div class="status-option" onclick="setStatus('invoiced')">
+        <div class="status-dot" style="background:#1565c0"></div>
+        <span>חשבון הוצא</span>
+      </div>
+      <div class="status-option" onclick="setStatus('paid')">
+        <div class="status-dot" style="background:#6a1b9a"></div>
+        <span>שולם</span>
+      </div>
+    </div>
+    <button class="sheet-btn sheet-can" onclick="closeOverlay('overlay-status')">ביטול</button>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     CLIENTS SCREEN
+════════════════════════ -->
+<div class="screen" id="screen-clients">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">לקוחות</div>
+      <div class="topbar-sub">שמורים לשימוש חוזר</div>
+    </div>
+  </div>
+  <div id="clients-list" style="margin-top:12px"></div>
+  <div style="height:80px"></div>
+</div>
+
+<!-- ════════════════════════
+     RECEIPTS SCREEN
+════════════════════════ -->
+<div class="screen" id="screen-receipts">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">קבלות</div>
+      <div class="topbar-sub" id="rec-list-sub">כל הקבלות שהוצאו</div>
+    </div>
+  </div>
+
+  <!-- פילטר שנה -->
+  <div style="padding:12px 12px 0;display:flex;gap:8px;overflow-x:auto" id="rec-year-filter"></div>
+
+  <!-- סיכום כספי -->
+  <div id="rec-summary" style="padding:12px 12px 4px;display:flex;gap:8px"></div>
+
+  <!-- רשימה -->
+  <div id="receipts-list" style="margin-top:4px"></div>
+  <div style="height:80px"></div>
+</div>
+
+<!-- ════════════════════════
+     BOTTOM NAV
+════════════════════════ -->
+<div class="bottom-nav" id="bottom-nav">
+  <button class="nav-btn active" id="nav-home" onclick="goHome()">
+    <span class="nav-icon">📋</span>הצעות
+  </button>
+  <button class="nav-btn" id="nav-tracker" onclick="showTrackerScreen()">
+    <span class="nav-icon">📊</span>מעקב
+  </button>
+  <button class="nav-btn" id="nav-receipts" onclick="showReceiptsScreen()">
+    <span class="nav-icon">🧾</span>קבלות
+  </button>
+  <button class="nav-btn" id="nav-clients" onclick="showClientsScreen()">
+    <span class="nav-icon">👥</span>לקוחות
+  </button>
+</div>
+
+<!-- ════════════════════════
+     OVERLAYS
+════════════════════════ -->
+<!-- PDF overlay -->
+<div class="overlay" id="overlay-pdf">
+  <div class="sheet">
+    <div class="sheet-title">איך לשמור PDF 📄</div>
+    <div class="sheet-step"><div class="step-n">1</div><div>לחץ <strong>"המשך להדפסה"</strong></div></div>
+    <div class="sheet-step"><div class="step-n">2</div><div>בחר <strong>"Save as PDF"</strong> במקום מדפסת</div></div>
+    <div class="sheet-step"><div class="step-n">3</div><div>שמור ושתף בוואטסאפ ללקוח</div></div>
+    <button class="sheet-btn sheet-go" onclick="doPrint()">המשך להדפסה ←</button>
+    <button class="sheet-btn sheet-can" onclick="closeOverlay('overlay-pdf')">ביטול</button>
+  </div>
+</div>
+
+<!-- Client picker overlay -->
+<div class="overlay" id="overlay-clients">
+  <div class="sheet">
+    <div class="sheet-title">בחר לקוח קיים</div>
+    <div id="client-pick-list"></div>
+    <button class="sheet-btn sheet-can" onclick="closeOverlay('overlay-clients')">ביטול</button>
+  </div>
+</div>
+
+<!-- ════════════════════════
+     PDF DOCUMENT
+════════════════════════ -->
+<div class="pdf-doc" id="pdf-doc">
+  <div class="pdf-title" id="pdf-title-text">הצעת מחיר</div>
+  <div class="pdf-biz-name">עמית ברנר הרצאות</div>
+  <div class="pdf-biz-detail">עוסק פטור 213997604</div>
+  <div class="pdf-biz-detail">058-519-2003 | amitbn455@gmail.com</div>
+  <div class="pdf-divider"></div>
+  <div class="pdf-ref" id="pdf-ref"></div>
+  <div class="pdf-meta">
+    <div class="pdf-meta-item"><label>לכבוד</label><div class="v" id="pdf-client"></div></div>
+    <div class="pdf-meta-item"><label>טלפון</label><div class="v" id="pdf-cphone"></div></div>
+    <div class="pdf-meta-item"><label>מייל</label><div class="v" id="pdf-cemail"></div></div>
+    <div class="pdf-meta-item"><label>ח.פ. / ע.מ.</label><div class="v" id="pdf-cid"></div></div>
+    <div class="pdf-meta-item"><label id="pdf-date-label">תאריך הצעה</label><div class="v" id="pdf-date"></div></div>
+    <div class="pdf-meta-item"><label id="pdf-num-label">מספר הצעה</label><div class="v" id="pdf-num"></div></div>
+    <div class="pdf-meta-item"><label>תאריך ביצוע</label><div class="v" id="pdf-ldate"></div></div>
+    <div class="pdf-meta-item"><label id="pdf-extra-label">בתוקף עד</label><div class="v" id="pdf-extra-val"></div></div>
+    <div class="pdf-meta-item"><label>תנאי תשלום</label><div class="v" id="pdf-payment"></div></div>
+  </div>
+  <table class="pdf-table">
+    <thead>
+      <tr>
+        <th style="width:50%">תיאור</th>
+        <th class="tc" id="pdf-tag-th" style="width:10%;display:none">סוג</th>
+        <th class="tc" style="width:14%">כמות</th>
+        <th class="tc" style="width:13%">מחיר ₪</th>
+        <th class="tc" style="width:13%">סה״כ ₪</th>
+      </tr>
+    </thead>
+    <tbody id="pdf-items"></tbody>
+  </table>
+  <div class="pdf-totals">
+    <div class="pdf-totals-inner">
+      <div class="pdf-tot-row" id="pdf-base-row" style="display:none"><span class="tl">סכום הצעה</span><span class="tv" id="pdf-base-sub"></span></div>
+      <div class="pdf-tot-row" id="pdf-extra-row" style="display:none"><span class="tl">תוספות</span><span class="tv" id="pdf-extra-sub"></span></div>
+      <div class="pdf-tot-row" id="pdf-disc-row" style="display:none"><span class="tl">הנחה</span><span class="tv" id="pdf-disc-val"></span></div>
+      <div class="pdf-tot-row"><span class="tl">סה״כ לתשלום</span><span class="tv" id="pdf-grand"></span></div>
+    </div>
+  </div>
+  <div class="pdf-notes" id="pdf-notes-wrap" style="display:none">
+    <label>הערות / תנאי תשלום</label>
+    <div class="v" id="pdf-notes-text"></div>
+  </div>
+  <div class="pdf-bank" id="pdf-bank-block" style="display:none">
+    <div class="pdf-bank-title">פרטי בנק לתשלום</div>
+    <div class="pdf-bank-row">
+      <div class="pdf-bank-item"><label>בנק</label><div class="v">הפועלים 12</div></div>
+      <div class="pdf-bank-item"><label>סניף</label><div class="v">יקנעם 722</div></div>
+      <div class="pdf-bank-item"><label>חשבון</label><div class="v">605765</div></div>
+    </div>
+  </div>
+  <div class="pdf-sigs" id="pdf-sigs">
+    <div class="pdf-sig">
+      <label>אישור וחתימת הלקוח</label>
+      <div class="pdf-sig-line"></div>
+      <div class="pdf-sig-sub">חתימה ותאריך</div>
+    </div>
+  </div>
+</div>
+
+<!-- Calendar overlay -->
+<div class="overlay" id="overlay-cal">
+  <div class="sheet">
+    <div id="cal-sheet-content"></div>
+    <button class="sheet-btn sheet-can" onclick="closeOverlay('overlay-cal')">סגור</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════
+// STATE
+// ════════════════════════
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw5VJtg58vEfNHLqTnJzGugMCDNFfmjegnlFn3dIQD5J91MXa1WTMxUyBqoA8mytPgGyQ/exec';
+
+let quotes   = [];
+let clients  = [];
+let currentQ = null;
+let editMode = false;
+let printMode = '';
+let itemN = 0;
+let extraN = 0;
+let isSaving = false;
+
+// ════════════════════════
+// GOOGLE SHEETS SYNC
+// ════════════════════════
+async function save(silent) {
+  if (isSaving) return;
+  isSaving = true;
+  if (!silent) showToast('שומר...', false, true);
+  try {
+    const payload = JSON.stringify({ quotes, clients });
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: payload,
+      headers: { 'Content-Type': 'text/plain' }
+    });
+    const text = await res.text();
+    const result = JSON.parse(text);
+    if (result.ok) {
+      if (!silent) showToast('נשמר ✓');
+    } else {
+      if (!silent) showToast('שגיאה בשמירה', true);
+    }
+  } catch(e) {
+    if (!silent) showToast('שגיאה בשמירה — בדוק חיבור לאינטרנט', true);
+  }
+  isSaving = false;
+}
+
+async function loadData() {
+  showLoading(true);
+  try {
+    const res = await fetch(SCRIPT_URL + '?action=load&t=' + Date.now());
+    const text = await res.text();
+    const data = text && text !== '{}' ? JSON.parse(text) : {};
+    quotes  = data.quotes  || [];
+    clients = data.clients || [];
+  } catch(e) {
+    showToast('שגיאה בטעינה — בדוק חיבור לאינטרנט', true);
+  }
+  showLoading(false);
+  renderHome();
+}
+
+function showLoading(on) {
+  document.getElementById('loading-bar').style.display = on ? 'block' : 'none';
+}
+
+function showToast(msg, isError, persist) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? '#c0392b' : '#1a6b3a';
+  t.style.display = 'block';
+  if (!persist) setTimeout(()=>t.style.display='none', 2500);
+}
+
+function fmtDate(el) {
+  let v = el.value.replace(/\D/g,'');
+  if (v.length > 8) v = v.slice(0,8);
+  if (v.length >= 5) v = v.slice(0,2)+'.'+v.slice(2,4)+'.'+v.slice(4);
+  else if (v.length >= 3) v = v.slice(0,2)+'.'+v.slice(2);
+  el.value = v;
+}
+
+function today() {
+  const t = new Date();
+  return String(t.getDate()).padStart(2,'0')+'.'+String(t.getMonth()+1).padStart(2,'0')+'.'+t.getFullYear();
+}
+
+function dueDate(days) {
+  const t = new Date(); t.setDate(t.getDate()+days);
+  return String(t.getDate()).padStart(2,'0')+'.'+String(t.getMonth()+1).padStart(2,'0')+'.'+t.getFullYear();
+}
+
+function nextQNum() {
+  const yr = new Date().getFullYear();
+  const n = quotes.filter(q=>q.qnum&&q.qnum.startsWith(yr+'')).length + 1;
+  return yr+'-'+String(n).padStart(3,'0');
+}
+
+function nextInvNum() {
+  const yr = new Date().getFullYear();
+  const n = quotes.filter(q => q.invNum && q.invNum.startsWith('INV-'+yr)).length + 1;
+  return 'INV-'+yr+'-'+String(n).padStart(3,'0');
+}
+
+function fmt(n) { return '₪'+(n||0).toLocaleString('he-IL'); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const nav = document.getElementById('bottom-nav');
+  nav.style.display = ['screen-home','screen-clients','screen-receipts'].includes(id) ? 'flex' : 'none';
+  window.scrollTo(0,0);
+}
+
+function openOverlay(id)  { document.getElementById(id).classList.add('open'); }
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+
+// ════════════════════════
+// HOME
+// ════════════════════════
+function goHome() {
+  renderHome();
+  showScreen('screen-home');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nav-home').classList.add('active');
+}
+
+function renderHome() {
+  const list = document.getElementById('home-list');
+  document.getElementById('empty-msg').style.display = quotes.length ? 'none' : 'block';
+  // remove old items
+  list.querySelectorAll('.quote-item').forEach(e=>e.remove());
+  // newest first
+  [...quotes].reverse().forEach(q => {
+    const div = document.createElement('div');
+    div.className = 'quote-item';
+    const statusBadge = q.receipted
+      ? `<span class="badge badge-purple">קבלה הופקה</span>`
+      : q.invoiced
+      ? `<span class="badge badge-green">חשבון הופק</span>`
+      : `<span class="badge badge-gray">הצעה</span>`;
+    div.innerHTML = `
+      <div class="qi-top">
+        <div class="qi-client">${q.client||'ללא שם'}</div>
+        <div class="qi-date">${q.qdate||''}</div>
+      </div>
+      <div class="qi-bottom">
+        <div class="qi-desc">${statusBadge} ${q.qnum||''}</div>
+        <div class="qi-amount">${fmt(q.grand)}</div>
+      </div>`;
+    div.onclick = () => openDetail(q.id);
+    list.appendChild(div);
+  });
+}
+
+// ════════════════════════
+// NEW QUOTE FORM
+// ════════════════════════
+function startNewQuote() {
+  editMode = false;
+  currentQ = null;
+  itemN = 0;
+  document.getElementById('form-topbar-title').textContent = 'הצעת מחיר חדשה';
+  document.getElementById('form-topbar-sub').textContent = 'מלא את הפרטים';
+  ['f-client','f-cphone','f-cemail','f-cid','f-ldate','f-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-disc').value = 0;
+  document.getElementById('f-qdate').value = today();
+  document.getElementById('f-qnum').value  = nextQNum();
+  document.getElementById('f-valid').value = dueDate(30);
+  document.getElementById('f-items-list').innerHTML = '';
+  addItem('הרצאה', 1, 1500);
+  calcForm();
+  showScreen('screen-form');
+}
+
+function addItem(d, q, p) {
+  itemN++;
+  const el = document.createElement('div');
+  el.className = 'item-card';
+  el.innerHTML = `
+    <div class="item-head">
+      <span class="item-label">פריט ${itemN}</span>
+      <button class="del-btn" onclick="this.closest('.item-card').remove();renumItems();calcForm()">✕</button>
+    </div>
+    <input class="item-desc" type="text" value="${d||''}" placeholder="תיאור השירות / ההרצאה" oninput="calcForm()">
+    <div class="nums">
+      <div><label>כמות</label><input type="number" value="${q||1}" min="1" oninput="calcForm()"></div>
+      <div><label>מחיר ₪</label><input type="number" value="${p||0}" min="0" oninput="calcForm()"></div>
+      <div class="tot"><label>סה״כ</label><input type="text" readonly tabindex="-1"></div>
+    </div>`;
+  document.getElementById('f-items-list').appendChild(el);
+  calcForm();
+}
+
+function renumItems() {
+  document.querySelectorAll('#f-items-list .item-card').forEach((c,i)=>{
+    c.querySelector('.item-label').textContent = 'פריט '+(i+1);
+  });
+  itemN = document.querySelectorAll('#f-items-list .item-card').length;
+}
+
+function calcForm() {
+  let sub = 0;
+  document.querySelectorAll('#f-items-list .item-card').forEach(c=>{
+    const ins = c.querySelectorAll('.nums input');
+    const line = (parseFloat(ins[0].value)||0)*(parseFloat(ins[1].value)||0);
+    ins[2].value = fmt(line);
+    sub += line;
+  });
+  const disc  = parseFloat(document.getElementById('f-disc').value)||0;
+  const grand = sub*(1-disc/100);
+  document.getElementById('f-sub').textContent   = fmt(sub);
+  document.getElementById('f-grand').textContent = fmt(grand);
+}
+
+function getFormData() {
+  const items = [];
+  document.querySelectorAll('#f-items-list .item-card').forEach(c=>{
+    const ins = c.querySelectorAll('.nums input');
+    items.push({ desc: c.querySelector('.item-desc').value, qty: parseFloat(ins[0].value)||1, price: parseFloat(ins[1].value)||0 });
+  });
+  const disc  = parseFloat(document.getElementById('f-disc').value)||0;
+  const sub   = items.reduce((a,i)=>a+i.qty*i.price,0);
+  const grand = sub*(1-disc/100);
+  return {
+    client: document.getElementById('f-client').value,
+    cphone: document.getElementById('f-cphone').value,
+    cemail: document.getElementById('f-cemail').value,
+    cid:    document.getElementById('f-cid').value,
+    qdate:  document.getElementById('f-qdate').value,
+    qnum:   document.getElementById('f-qnum').value,
+    ldate:  document.getElementById('f-ldate').value,
+    valid:  document.getElementById('f-valid').value,
+    notes:  document.getElementById('f-notes').value,
+    payment: document.getElementById('f-payment').value,
+    disc, items, sub, grand
+  };
+}
+
+function saveQuote() {
+  const data = getFormData();
+  if (!data.client) { alert('נא למלא שם לקוח'); return; }
+
+  // save client for reuse
+  if (data.client && !clients.find(c=>c.name===data.client)) {
+    clients.push({ name: data.client, phone: data.cphone, email: data.cemail, cid: data.cid });
+  }
+
+  if (editMode && currentQ) {
+    const idx = quotes.findIndex(q=>q.id===currentQ.id);
+    if (idx>=0) quotes[idx] = { ...quotes[idx], ...data };
+    currentQ = quotes[idx];
+  } else {
+    const q = { id: Date.now(), ...data, invoiced: false };
+    quotes.push(q);
+    currentQ = q;
+  }
+  save();
+  openDetail(currentQ.id);
+}
+
+// ════════════════════════
+// DETAIL
+// ════════════════════════
+function openDetail(id) {
+  currentQ = quotes.find(q=>q.id===id);
+  if (!currentQ) return;
+  document.getElementById('d-topbar-name').textContent = currentQ.client||'—';
+  document.getElementById('d-topbar-sub').textContent  = currentQ.qnum||'';
+
+  const inv = currentQ.receipted
+    ? `<span class="badge badge-purple" style="margin-right:6px">קבלה הופקה</span>`
+    : currentQ.invoiced
+    ? `<span class="badge badge-green" style="margin-right:6px">חשבון הופק</span>`
+    : '';
+
+  let html = `
+    <div class="detail-card" style="margin-top:12px">
+      <div class="detail-row"><span class="dr-label">לקוח</span><span class="dr-val">${currentQ.client||'—'} ${inv}</span></div>
+      <div class="detail-row"><span class="dr-label">תאריך הצעה</span><span class="dr-val">${currentQ.qdate||'—'}</span></div>
+      <div class="detail-row"><span class="dr-label">מספר הצעה</span><span class="dr-val">${currentQ.qnum||'—'}</span></div>
+      <div class="detail-row"><span class="dr-label">תאריך ביצוע</span><span class="dr-val">${currentQ.ldate||'—'}</span></div>
+      <div class="detail-row"><span class="dr-label">סה״כ</span><span class="dr-val">${fmt(currentQ.grand)}</span></div>
+    </div>
+    <div class="detail-card">
+      <table class="items-table">
+        <thead><tr><th>תיאור</th><th class="tc">כמות</th><th class="tc">מחיר</th><th class="tc">סה״כ</th></tr></thead>
+        <tbody>`;
+  (currentQ.items||[]).forEach(it=>{
+    html += `<tr><td>${it.desc}</td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(it.qty*it.price)}</td></tr>`;
+  });
+  html += `</tbody></table></div>`;
+  if (currentQ.notes) {
+    html += `<div class="detail-card"><div class="detail-row"><span class="dr-label">הערות</span><span class="dr-val" style="font-size:13px;max-width:70%;text-align:left">${currentQ.notes}</span></div></div>`;
+  }
+  document.getElementById('d-content').innerHTML = html;
+  showScreen('screen-detail');
+  renderDetailStatus();
+}
+
+function editQuote() {
+  editMode = true;
+  itemN = 0;
+  document.getElementById('form-topbar-title').textContent = 'עריכת הצעה';
+  document.getElementById('form-topbar-sub').textContent   = currentQ.client||'';
+  document.getElementById('f-client').value = currentQ.client||'';
+  document.getElementById('f-cphone').value = currentQ.cphone||'';
+  document.getElementById('f-cemail').value = currentQ.cemail||'';
+  document.getElementById('f-cid').value    = currentQ.cid||'';
+  document.getElementById('f-qdate').value  = currentQ.qdate||'';
+  document.getElementById('f-qnum').value   = currentQ.qnum||'';
+  document.getElementById('f-ldate').value  = currentQ.ldate||'';
+  document.getElementById('f-valid').value  = currentQ.valid||'';
+  document.getElementById('f-notes').value   = currentQ.notes||'';
+  document.getElementById('f-payment').value = currentQ.payment||'';
+  document.getElementById('f-disc').value   = currentQ.disc||0;
+  document.getElementById('f-items-list').innerHTML = '';
+  (currentQ.items||[]).forEach(it=>addItem(it.desc, it.qty, it.price));
+  calcForm();
+  showScreen('screen-form');
+}
+
+function deleteQuote() {
+  if (!confirm('למחוק הצעה זו?')) return;
+  quotes = quotes.filter(q=>q.id!==currentQ.id);
+  save(); goHome();
+}
+
+// ════════════════════════
+// INVOICE FLOW
+// ════════════════════════
+function openInvoiceFlow() {
+  if (!currentQ) return;
+  extraN = 0;
+  document.getElementById('inv-topbar-sub').textContent = currentQ.client||'';
+  document.getElementById('inv-date').value = today();
+  document.getElementById('inv-num').value  = currentQ.invNum || nextInvNum();
+  document.getElementById('inv-due').value  = currentQ.invDue || dueDate(30);
+  document.getElementById('inv-notes').value   = currentQ.invNotes || currentQ.notes || '';
+  document.getElementById('inv-payment').value = currentQ.invPayment || currentQ.payment || '';
+  document.getElementById('inv-disc').value    = currentQ.invDisc !== undefined ? currentQ.invDisc : (currentQ.disc || 0);
+
+  // base items (read-only display)
+  const baseDiv = document.getElementById('inv-base-items');
+  baseDiv.innerHTML = '';
+  (currentQ.items||[]).forEach(it=>{
+    const d = document.createElement('div');
+    d.style.cssText = 'padding:11px 16px;border-bottom:1px solid var(--border);font-size:14px;display:flex;justify-content:space-between;align-items:center';
+    d.innerHTML = `<span style="flex:1">${it.desc}</span><span style="color:var(--muted);margin-left:8px">${it.qty}×${fmt(it.price)}</span><span style="font-weight:700;margin-right:8px">${fmt(it.qty*it.price)}</span>`;
+    baseDiv.appendChild(d);
+  });
+
+  // extra items
+  document.getElementById('inv-extra-list').innerHTML = '';
+  (currentQ.invExtras||[]).forEach(it=>addExtraItem(it.desc, it.qty, it.price));
+
+  calcInvoice();
+  showScreen('screen-invoice');
+}
+
+function addExtraItem(d, q, p) {
+  extraN++;
+  const el = document.createElement('div');
+  el.className = 'extra-item-card';
+  el.innerHTML = `
+    <div class="item-head">
+      <span class="item-label" style="color:var(--orange)">תוספת ${extraN}</span>
+      <button class="del-btn" onclick="this.closest('.extra-item-card').remove();calcInvoice()">✕</button>
+    </div>
+    <input class="item-desc" type="text" value="${d||''}" placeholder="תיאור התוספת" oninput="calcInvoice()" style="font-family:'Assistant',sans-serif;font-size:16px;font-weight:600;border:none;width:100%;background:transparent;outline:none;direction:rtl;text-align:right;margin-bottom:10px">
+    <div class="nums">
+      <div><label>כמות</label><input type="number" value="${q||1}" min="1" oninput="calcInvoice()"></div>
+      <div><label>מחיר ₪</label><input type="number" value="${p||0}" min="0" oninput="calcInvoice()"></div>
+      <div class="tot"><label>סה״כ</label><input type="text" readonly tabindex="-1"></div>
+    </div>`;
+  document.getElementById('inv-extra-list').appendChild(el);
+  calcInvoice();
+}
+
+function calcInvoice() {
+  const baseSub = (currentQ.items||[]).reduce((a,i)=>a+i.qty*i.price,0);
+  let extraSub = 0;
+  document.querySelectorAll('#inv-extra-list .extra-item-card').forEach(c=>{
+    const ins = c.querySelectorAll('.nums input');
+    const line = (parseFloat(ins[0].value)||0)*(parseFloat(ins[1].value)||0);
+    ins[2].value = fmt(line);
+    extraSub += line;
+  });
+  const disc  = parseFloat(document.getElementById('inv-disc').value)||0;
+  const grand = (baseSub + extraSub) * (1 - disc/100);
+  document.getElementById('inv-base-sub').textContent  = fmt(baseSub);
+  document.getElementById('inv-extra-sub').textContent = fmt(extraSub);
+  document.getElementById('inv-grand').textContent     = fmt(grand);
+  document.getElementById('inv-extra-row').style.display = extraSub>0 ? 'flex' : 'none';
+  document.getElementById('inv-disc-row').style.display  = disc>0 ? 'flex' : 'none';
+}
+
+// ════════════════════════
+// STATUS
+// ════════════════════════
+const STATUS_MAP = {
+  pending:  { label: 'ממתין לתשובה', cls: 'status-pending',  dot: '#f57f17' },
+  approved: { label: 'אושר',          cls: 'status-approved', dot: '#1a6b3a' },
+  rejected: { label: 'נדחה',          cls: 'status-rejected', dot: '#c0392b' },
+  invoiced: { label: 'חשבון הוצא',   cls: 'status-invoiced', dot: '#1565c0' },
+  paid:     { label: 'שולם',          cls: 'status-paid',     dot: '#6a1b9a' },
+};
+
+function statusBadgeHtml(status) {
+  const s = STATUS_MAP[status] || STATUS_MAP['pending'];
+  return `<span class="status-badge ${s.cls}"><span style="width:8px;height:8px;border-radius:50%;background:${s.dot};display:inline-block"></span>${s.label}</span>`;
+}
+
+function openStatusPicker() {
+  openOverlay('overlay-status');
+}
+
+async function setStatus(status) {
+  closeOverlay('overlay-status');
+  const idx = quotes.findIndex(q=>q.id===currentQ.id);
+  if (idx>=0) { quotes[idx].status = status; currentQ = quotes[idx]; }
+  await save();
+  renderDetailStatus();
+  renderTracker();
+  renderHome();
+}
+
+function renderDetailStatus() {
+  const el = document.getElementById('detail-status-badge');
+  if (el) el.innerHTML = statusBadgeHtml(currentQ.status||'pending');
+}
+
+// ════════════════════════
+// TRACKER
+// ════════════════════════
+let trackerYear = null;
+
+function showTrackerScreen() {
+  trackerYear = String(new Date().getFullYear());
+  renderTracker();
+  showScreen('screen-tracker');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nav-tracker').classList.add('active');
+}
+
+function renderTracker() {
+  // בניית פילטר שנים
+  const years = [...new Set(quotes.map(q => {
+    const d = q.qdate || '';
+    const parts = d.split('.');
+    return parts.length === 3 ? parts[2] : null;
+  }).filter(Boolean))].sort((a,b)=>b-a);
+
+  if (!trackerYear && years.length) trackerYear = years[0];
+
+  const filterEl = document.getElementById('year-filter');
+  filterEl.innerHTML = '';
+  ['הכל', ...years].forEach(y => {
+    const btn = document.createElement('button');
+    const isActive = (y === 'הכל' && !trackerYear) || y === trackerYear;
+    btn.textContent = y;
+    btn.style.cssText = `font-family:'Assistant',sans-serif;font-size:13px;font-weight:700;
+      padding:6px 14px;border-radius:20px;border:none;cursor:pointer;white-space:nowrap;
+      background:${isActive ? '#111' : '#fff'};color:${isActive ? '#fff' : '#888'};
+      border:1.5px solid ${isActive ? '#111' : '#ddd'}`;
+    btn.onclick = () => {
+      trackerYear = y === 'הכל' ? null : y;
+      renderTracker();
+    };
+    filterEl.appendChild(btn);
+  });
+
+  // סינון הצעות
+  const filtered = [...quotes].reverse().filter(q => {
+    if (!trackerYear) return true;
+    const parts = (q.qdate||'').split('.');
+    return parts.length === 3 && parts[2] === trackerYear;
+  });
+
+  const list = document.getElementById('tracker-list');
+  list.innerHTML = '';
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div>אין הצעות לשנה זו.</div>';
+    return;
+  }
+
+  // סיכום מהיר
+  const total = filtered.reduce((a,q)=>a+q.grand,0);
+  const paid  = filtered.filter(q=>q.status==='paid').reduce((a,q)=>a+q.grand,0);
+  const summary = document.createElement('div');
+  summary.style.cssText = 'display:flex;gap:8px;padding:0 12px 4px;';
+  summary.innerHTML = `
+    <div style="flex:1;background:#fff;border:1px solid #e2e0d8;border-radius:12px;padding:12px 14px">
+      <div style="font-size:10px;font-weight:700;color:#aaa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">סה״כ הצעות</div>
+      <div style="font-size:17px;font-weight:800">${fmt(total)}</div>
+    </div>
+    <div style="flex:1;background:#f3e5f5;border:1px solid #ce93d8;border-radius:12px;padding:12px 14px">
+      <div style="font-size:10px;font-weight:700;color:#6a1b9a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">שולם</div>
+      <div style="font-size:17px;font-weight:800;color:#6a1b9a">${fmt(paid)}</div>
+    </div>`;
+  list.appendChild(summary);
+
+  filtered.forEach(q => {
+    const div = document.createElement('div');
+    div.className = 'tracker-row';
+    div.innerHTML = `
+      <div class="tracker-info">
+        <div class="tracker-client">${q.client||'ללא שם'}</div>
+        <div class="tracker-meta">${q.qnum||''} · ${q.qdate||''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <span class="tracker-amount">${fmt(q.grand)}</span>
+        ${statusBadgeHtml(q.status||'pending')}
+      </div>`;
+    div.onclick = () => openDetail(q.id);
+    list.appendChild(div);
+  });
+}
+
+// ════════════════════════
+// RECEIPTS SCREEN
+// ════════════════════════
+let receiptsYear = null;
+
+function showReceiptsScreen() {
+  receiptsYear = String(new Date().getFullYear());
+  renderReceipts();
+  showScreen('screen-receipts');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nav-receipts').classList.add('active');
+}
+
+function renderReceipts() {
+  // כל הקבלות — הצעות שיש להן recNum
+  const allRecs = quotes.filter(q => q.recNum);
+
+  // שנים זמינות
+  const years = [...new Set(allRecs.map(q => {
+    const parts = (q.recDate||'').split('.');
+    return parts.length === 3 ? parts[2] : null;
+  }).filter(Boolean))].sort((a,b)=>b-a);
+
+  if (!receiptsYear && years.length) receiptsYear = years[0];
+
+  // פילטר שנה
+  const filterEl = document.getElementById('rec-year-filter');
+  filterEl.innerHTML = '';
+  ['הכל', ...years].forEach(y => {
+    const btn = document.createElement('button');
+    const isActive = (y === 'הכל' && !receiptsYear) || y === receiptsYear;
+    btn.textContent = y;
+    btn.style.cssText = `font-family:'Assistant',sans-serif;font-size:13px;font-weight:700;
+      padding:6px 14px;border-radius:20px;border:none;cursor:pointer;white-space:nowrap;
+      background:${isActive ? '#6a1b9a' : '#fff'};color:${isActive ? '#fff' : '#888'};
+      border:1.5px solid ${isActive ? '#6a1b9a' : '#ddd'}`;
+    btn.onclick = () => { receiptsYear = y === 'הכל' ? null : y; renderReceipts(); };
+    filterEl.appendChild(btn);
+  });
+
+  // סינון לפי שנה
+  const filtered = [...allRecs].reverse().filter(q => {
+    if (!receiptsYear) return true;
+    const parts = (q.recDate||'').split('.');
+    return parts.length === 3 && parts[2] === receiptsYear;
+  });
+
+  // סיכום כספי
+  const total = filtered.reduce((a,q)=>a+(q.recGrand||0),0);
+  const summaryEl = document.getElementById('rec-summary');
+  summaryEl.innerHTML = `
+    <div style="flex:1;background:#f3e5f5;border:1px solid #ce93d8;border-radius:12px;padding:12px 14px">
+      <div style="font-size:10px;font-weight:700;color:#6a1b9a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">סה״כ התקבל</div>
+      <div style="font-size:17px;font-weight:800;color:#6a1b9a">${fmt(total)}</div>
+    </div>
+    <div style="flex:1;background:#fff;border:1px solid #e2e0d8;border-radius:12px;padding:12px 14px">
+      <div style="font-size:10px;font-weight:700;color:#aaa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">מספר קבלות</div>
+      <div style="font-size:17px;font-weight:800">${filtered.length}</div>
+    </div>`;
+
+  document.getElementById('rec-list-sub').textContent =
+    filtered.length ? `${filtered.length} קבלות` : 'אין קבלות';
+
+  // רשימה
+  const list = document.getElementById('receipts-list');
+  list.innerHTML = '';
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🧾</div>אין קבלות לתקופה זו.</div>';
+    return;
+  }
+
+  filtered.forEach(q => {
+    const div = document.createElement('div');
+    div.style.cssText = `background:#fff;margin:0 12px 10px;border-radius:14px;
+      border:1px solid #e2e0d8;overflow:hidden`;
+
+    const methodIcon = {
+      'העברה בנקאית':'🏦','מזומן':'💵',"צ׳ק":'📝','אשראי':'💳','ביט':'📱','פייבוקס':'📱'
+    }[q.recMethod||''] || '💳';
+
+    div.innerHTML = `
+      <div style="padding:14px 16px;cursor:pointer" onclick="openReceiptFromList('${q.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div style="font-size:16px;font-weight:700">${q.client||'ללא שם'}</div>
+          <div style="font-size:16px;font-weight:800;color:#6a1b9a">${fmt(q.recGrand||0)}</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:12px;color:#888">${q.recNum||''} · ${q.recDate||''}</div>
+          <div style="font-size:12px;color:#888">${methodIcon} ${q.recMethod||''}</div>
+        </div>
+        ${q.recRef ? `<div style="font-size:11px;color:#aaa;margin-top:4px">${q.recRef}</div>` : ''}
+      </div>
+      <div style="border-top:1px solid #f0eeea;display:flex">
+        <button onclick="generateReceiptPdfFromList('${q.id}')"
+          style="flex:1;font-family:'Assistant',sans-serif;font-size:13px;font-weight:700;
+          background:none;border:none;padding:11px;cursor:pointer;color:#6a1b9a">
+          📥 הורד PDF
+        </button>
+        <div style="width:1px;background:#f0eeea"></div>
+        <button onclick="openDetail('${q.id}')"
+          style="flex:1;font-family:'Assistant',sans-serif;font-size:13px;font-weight:700;
+          background:none;border:none;padding:11px;cursor:pointer;color:#888">
+          📋 הצעה מקורית
+        </button>
+        <div style="width:1px;background:#f0eeea"></div>
+        <button onclick="deleteReceipt('${q.id}')"
+          style="flex:1;font-family:'Assistant',sans-serif;font-size:13px;font-weight:700;
+          background:none;border:none;padding:11px;cursor:pointer;color:#c0392b">
+          🗑 מחיקה
+        </button>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function deleteReceipt(qid) {
+  const q = quotes.find(q => q.id == qid);
+  if (!q) return;
+
+  const msg = `למחוק את קבלה ${q.recNum||''}?\n\nלקוח: ${q.client||''}\nסכום: ${fmt(q.recGrand||0)}\n\nהצעה תחזור לסטטוס "${q.invoiced ? 'חשבון הופק' : 'ממתין לתשובה'}".`;
+  if (!confirm(msg)) return;
+
+  const idx = quotes.findIndex(q => q.id == qid);
+  if (idx < 0) return;
+
+  // מחיקת כל שדות הקבלה
+  delete quotes[idx].recNum;
+  delete quotes[idx].recDate;
+  delete quotes[idx].recRef;
+  delete quotes[idx].recMethod;
+  delete quotes[idx].recPayDate;
+  delete quotes[idx].recRefNum;
+  delete quotes[idx].recNotes;
+  delete quotes[idx].recItems;
+  delete quotes[idx].recGrand;
+  quotes[idx].receipted = false;
+
+  // החזרת סטטוס — אם היה חשבון חוזר ל-invoiced, אחרת ל-approved/pending
+  if (quotes[idx].invoiced) {
+    quotes[idx].status = 'invoiced';
+  } else if (quotes[idx].status === 'paid') {
+    quotes[idx].status = 'approved';
+  }
+
+  save();
+  renderReceipts();
+  renderHome();
+  showToast('קבלה נמחקה ✓');
+}
+
+function openReceiptFromList(qid) {
+  currentQ = quotes.find(q=>q.id==qid);
+  if (!currentQ) return;
+  openReceiptFlow();
+}
+
+// ════════════════════════
+// CLIENTS
+// ════════════════════════
+function showClientsScreen() {
+  renderClients();
+  showScreen('screen-clients');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nav-clients').classList.add('active');
+}
+
+function renderClients() {
+  const list = document.getElementById('clients-list');
+  list.innerHTML = '';
+  if (!clients.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div>אין לקוחות שמורים עדיין.</div>';
+    return;
+  }
+  clients.forEach(c=>{
+    const qCount = quotes.filter(q=>q.client===c.name).length;
+    const div = document.createElement('div');
+    div.className = 'client-item';
+    div.innerHTML = `
+      <div>
+        <div class="ci-name">${c.name}</div>
+        <div class="ci-sub">${c.phone||''} ${c.email?'· '+c.email:''}</div>
+      </div>
+      <span class="ci-count">${qCount} הצעות</span>`;
+    list.appendChild(div);
+  });
+}
+
+function openClientPicker() {
+  const list = document.getElementById('client-pick-list');
+  list.innerHTML = '';
+  if (!clients.length) {
+    list.innerHTML = '<div style="padding:16px;color:var(--muted);text-align:center;font-size:14px">אין לקוחות שמורים עדיין</div>';
+  } else {
+    clients.forEach(c=>{
+      const div = document.createElement('div');
+      div.className = 'client-pick-item';
+      div.textContent = c.name;
+      div.onclick = () => {
+        document.getElementById('f-client').value = c.name;
+        document.getElementById('f-cphone').value = c.phone||'';
+        document.getElementById('f-cemail').value = c.email||'';
+        document.getElementById('f-cid').value    = c.cid||'';
+        closeOverlay('overlay-clients');
+      };
+      list.appendChild(div);
+    });
+  }
+  openOverlay('overlay-clients');
+}
+
+// ════════════════════════
+// PRINT / PDF
+// ════════════════════════
+function printDoc(mode) {
+  printMode = mode;
+  if (mode === 'quote') {
+    fillPdfQuote();
+  } else {
+    fillPdfInvoice();
+  }
+  openOverlay('overlay-pdf');
+}
+
+function fillPdfQuote() {
+  const q = currentQ;
+  document.getElementById('pdf-title-text').textContent = 'הצעת מחיר';
+  document.getElementById('pdf-date-label').textContent  = 'תאריך הצעה';
+  document.getElementById('pdf-num-label').textContent   = 'מספר הצעה';
+  document.getElementById('pdf-extra-label').textContent = 'בתוקף עד';
+  document.getElementById('pdf-ref').classList.remove('show');
+  document.getElementById('pdf-client').textContent = q.client||'—';
+  document.getElementById('pdf-cphone').textContent = q.cphone||'—';
+  document.getElementById('pdf-cemail').textContent = q.cemail||'—';
+  document.getElementById('pdf-cid').textContent    = q.cid||'—';
+  document.getElementById('pdf-date').textContent   = q.qdate||'—';
+  document.getElementById('pdf-num').textContent    = q.qnum||'—';
+  document.getElementById('pdf-ldate').textContent  = q.ldate||'—';
+  document.getElementById('pdf-extra-val').textContent = q.valid||'—';
+  document.getElementById('pdf-payment').textContent   = q.payment||'—';
+  document.getElementById('pdf-bank-block').style.display = 'none';
+  document.getElementById('pdf-tag-th').style.display = 'none';
+
+  const tbody = document.getElementById('pdf-items');
+  tbody.innerHTML = '';
+  (q.items||[]).forEach(it=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${it.desc}</td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(it.qty*it.price)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  const disc = q.disc||0;
+  document.getElementById('pdf-base-row').style.display = 'none';
+  document.getElementById('pdf-extra-row').style.display = 'none';
+  document.getElementById('pdf-disc-row').style.display  = disc>0 ? 'flex' : 'none';
+  if (disc>0) document.getElementById('pdf-disc-val').textContent = disc+'%';
+  document.getElementById('pdf-grand').textContent = fmt(q.grand);
+
+  const notes = q.notes||'';
+  document.getElementById('pdf-notes-wrap').style.display = notes ? 'block' : 'none';
+  document.getElementById('pdf-notes-text').textContent   = notes;
+
+  document.getElementById('pdf-sigs').innerHTML = `
+    <div class="pdf-sig"><label>אישור וחתימת הלקוח</label><div class="pdf-sig-line"></div><div class="pdf-sig-sub">חתימה ותאריך</div></div>`;
+}
+
+function fillPdfInvoice() {
+  const q = currentQ;
+  const invDate  = document.getElementById('inv-date').value;
+  const invNum   = document.getElementById('inv-num').value;
+  const invDue   = document.getElementById('inv-due').value;
+  const invNotes = document.getElementById('inv-notes').value;
+
+  // save invoice data on quote
+  const extras = [];
+  document.querySelectorAll('#inv-extra-list .extra-item-card').forEach(c=>{
+    const ins = c.querySelectorAll('.nums input');
+    extras.push({ desc: c.querySelector('.item-desc').value, qty: parseFloat(ins[0].value)||1, price: parseFloat(ins[1].value)||0 });
+  });
+  const idx = quotes.findIndex(qq=>qq.id===q.id);
+  if (idx>=0) {
+    quotes[idx].invoiced  = true;
+    quotes[idx].invNum    = invNum;
+    quotes[idx].invDate   = invDate;
+    quotes[idx].invDue    = invDue;
+    quotes[idx].invNotes  = invNotes;
+    quotes[idx].invPayment = document.getElementById('inv-payment').value;
+    quotes[idx].invDisc   = parseFloat(document.getElementById('inv-disc').value)||0;
+    quotes[idx].invExtras = extras;
+    currentQ = quotes[idx];
+  }
+
+  document.getElementById('pdf-title-text').textContent = 'חשבון עסקה';
+  document.getElementById('pdf-date-label').textContent  = 'תאריך חשבון';
+  document.getElementById('pdf-num-label').textContent   = 'מספר חשבון';
+  document.getElementById('pdf-extra-label').textContent = 'תשלום עד';
+
+  const refText = 'בהתאם להצעת מחיר' + (q.qnum ? ' מס׳ '+q.qnum : '') + (q.qdate ? ' מתאריך '+q.qdate : '');
+  const refEl = document.getElementById('pdf-ref');
+  refEl.textContent = refText;
+  refEl.classList.add('show');
+
+  document.getElementById('pdf-client').textContent = q.client||'—';
+  document.getElementById('pdf-cphone').textContent = q.cphone||'—';
+  document.getElementById('pdf-cemail').textContent = q.cemail||'—';
+  document.getElementById('pdf-cid').textContent    = q.cid||'—';
+  document.getElementById('pdf-date').textContent   = invDate||'—';
+  document.getElementById('pdf-num').textContent    = invNum||'—';
+  document.getElementById('pdf-ldate').textContent  = q.ldate||'—';
+  document.getElementById('pdf-extra-val').textContent = invDue||'—';
+  document.getElementById('pdf-payment').textContent   = document.getElementById('inv-payment').value || q.payment || '—';
+  document.getElementById('pdf-bank-block').style.display = 'block';
+
+  const hasExtras = extras.length > 0;
+  document.getElementById('pdf-tag-th').style.display = hasExtras ? '' : 'none';
+
+  const tbody = document.getElementById('pdf-items');
+  tbody.innerHTML = '';
+  let baseSub = 0, extraSub = 0;
+  (q.items||[]).forEach(it=>{
+    const line = it.qty*it.price; baseSub += line;
+    const tr = document.createElement('tr');
+    tr.innerHTML = hasExtras
+      ? `<td>${it.desc}</td><td class="tc"><span class="pdf-tag base">הצעה</span></td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(line)}</td>`
+      : `<td>${it.desc}</td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(line)}</td>`;
+    tbody.appendChild(tr);
+  });
+  extras.forEach(it=>{
+    const line = it.qty*it.price; extraSub += line;
+    const tr = document.createElement('tr');
+    tr.className = 'extra-row';
+    tr.innerHTML = `<td>${it.desc}</td><td class="tc"><span class="pdf-tag extra">תוספת</span></td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(line)}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  const invDisc = parseFloat(document.getElementById('inv-disc').value)||0;
+  // שמירת invGrand עכשיו שbaseSub ו-extraSub ידועים
+  if (idx>=0) quotes[idx].invGrand = (baseSub+extraSub)*(1-invDisc/100);
+  document.getElementById('pdf-base-row').style.display  = hasExtras ? 'flex' : 'none';
+  document.getElementById('pdf-base-sub').textContent    = fmt(baseSub);
+  document.getElementById('pdf-extra-row').style.display = hasExtras ? 'flex' : 'none';
+  document.getElementById('pdf-extra-sub').textContent   = fmt(extraSub);
+  document.getElementById('pdf-disc-row').style.display  = invDisc>0 ? 'flex' : 'none';
+  if (invDisc>0) document.getElementById('pdf-disc-val').textContent = invDisc+'%';
+  document.getElementById('pdf-grand').textContent = fmt((baseSub+extraSub)*(1-invDisc/100));
+
+  const notes = invNotes||'';
+  document.getElementById('pdf-notes-wrap').style.display = notes ? 'block' : 'none';
+  document.getElementById('pdf-notes-text').textContent   = notes;
+
+  document.getElementById('pdf-sigs').innerHTML = '';
+}
+
+function doPrint() {
+  closeOverlay('overlay-pdf');
+  document.body.classList.add('printing-quote');
+  setTimeout(()=>{ window.print(); document.body.classList.remove('printing-quote'); }, 200);
+}
+
+// ════════════════════════
+// RECEIPT FLOW
+// ════════════════════════
+let recN = 0;
+
+function nextRecNum() {
+  const yr = new Date().getFullYear();
+  const n = quotes.filter(q => q.recNum && q.recNum.startsWith('REC-'+yr)).length + 1;
+  return 'REC-'+yr+'-'+String(n).padStart(3,'0');
+}
+
+function openReceiptFlow() {
+  if (!currentQ) return;
+  recN = 0;
+  document.getElementById('rec-topbar-sub').textContent = currentQ.client||'';
+  document.getElementById('rec-date').value     = currentQ.recDate    || today();
+  document.getElementById('rec-num').value      = currentQ.recNum     || nextRecNum();
+  document.getElementById('rec-pay-date').value = currentQ.recPayDate || today();
+  document.getElementById('rec-ref-num').value  = currentQ.recRefNum  || '';
+  document.getElementById('rec-notes').value    = currentQ.recNotes   || '';
+
+  const refText = currentQ.invNum
+    ? 'חשבון עסקה מס׳ ' + currentQ.invNum + (currentQ.invDate ? ' מתאריך ' + currentQ.invDate : '')
+    : '';
+  document.getElementById('rec-ref').value = currentQ.recRef || refText;
+
+  if (currentQ.recMethod) {
+    document.getElementById('rec-method').value = currentQ.recMethod;
+  }
+
+  document.getElementById('rec-items-list').innerHTML = '';
+  recN = 0;
+  if (currentQ.recItems && currentQ.recItems.length) {
+    currentQ.recItems.forEach(it => addRecItem(it.desc, it.qty, it.price));
+  } else {
+    const grand = (currentQ.invoiced && currentQ.invGrand !== undefined)
+      ? currentQ.invGrand : currentQ.grand || 0;
+    addRecItem('תשלום עבור הרצאה', 1, grand);
+  }
+  calcRec();
+  showScreen('screen-receipt');
+}
+
+function addRecItem(d, q, p) {
+  recN++;
+  const el = document.createElement('div');
+  el.className = 'item-card';
+  el.innerHTML = `
+    <div class="item-head">
+      <span class="item-label">שורה ${recN}</span>
+      <button class="del-btn" onclick="this.closest('.item-card').remove();calcRec()">✕</button>
+    </div>
+    <input class="item-desc" type="text" value="${d||''}" placeholder="פירוט" oninput="calcRec()">
+    <div class="nums">
+      <div><label>כמות</label><input type="number" value="${q||1}" min="1" oninput="calcRec()"></div>
+      <div><label>מחיר ₪</label><input type="number" value="${p||0}" min="0" oninput="calcRec()"></div>
+      <div class="tot"><label>סה״כ</label><input type="text" readonly tabindex="-1"></div>
+    </div>`;
+  document.getElementById('rec-items-list').appendChild(el);
+  calcRec();
+}
+
+function calcRec() {
+  let grand = 0;
+  document.querySelectorAll('#rec-items-list .item-card').forEach(c=>{
+    const ins = c.querySelectorAll('.nums input');
+    const line = (parseFloat(ins[0].value)||0)*(parseFloat(ins[1].value)||0);
+    ins[2].value = fmt(line);
+    grand += line;
+  });
+  document.getElementById('rec-grand').textContent = fmt(grand);
+}
+
+function getRecItems() {
+  const items = [];
+  document.querySelectorAll('#rec-items-list .item-card').forEach(c=>{
+    const ins = c.querySelectorAll('.nums input');
+    items.push({ desc: c.querySelector('.item-desc').value, qty: parseFloat(ins[0].value)||1, price: parseFloat(ins[1].value)||0 });
+  });
+  return items;
+}
+
+function getRecData() {
+  const recItems = getRecItems();
+  return {
+    recDate:    document.getElementById('rec-date').value,
+    recNum:     document.getElementById('rec-num').value,
+    recRef:     document.getElementById('rec-ref').value,
+    recMethod:  document.getElementById('rec-method').value,
+    recPayDate: document.getElementById('rec-pay-date').value,
+    recRefNum:  document.getElementById('rec-ref-num').value,
+    recNotes:   document.getElementById('rec-notes').value,
+    recItems,
+    recGrand:   recItems.reduce((a,i)=>a+i.qty*i.price, 0)
+  };
+}
+
+function saveReceiptData(data) {
+  const idx = quotes.findIndex(q => q.id === currentQ.id);
+  if (idx < 0) return;
+  Object.assign(quotes[idx], data, { receipted: true, status: 'paid' });
+  currentQ = quotes[idx];
+  // שמור בשקט — אל תעצור אם נכשל
+  save(true).catch(()=>{});
+}
+
+function generateReceiptPdf() {
+  const data = getRecData();
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+
+  // טעינת גופן עברי
+  const fontB64 = 'AAEAAAAOAIAAAwBgR0RFRh09Er8AAGm8AAAA4EdQT1OOj+CRAABqnAAAEjZHU1VCdpPdAQAAfNQAAAPUT1MvMnp6IqsAAAFoAAAAYGNtYXBZJ4UCAAAHPAAAA3JnYXNwAAAAEAAAabQAAAAIZ2x5Zo/ovuQAAA1sAABSrGhlYWQvX/VkAAAA7AAAADZoaGVhDFIAIwAAASQAAAAkaG10eC7+h+gAAAHIAAAFcmxvY2H4wQ2DAAAKsAAAArxtYXhwAWoAqAAAAUgAAAAgbmFtZSuNSccAAGAYAAAB7nBvc3QZ1gSUAABiCAAAB6oAAQAAAAMZmgf0C0JfDzz1AAMIAAAAAADmLMjaAAAAAOYsyNr8lP1RB1kHygAAAAYAAgAAAAAAAAABAAAIYvyiAAAHovyU+oIHWQABAAAAAAAAAAAAAAAAAAABXAABAAABXQBXAAUATwAEAAEAAAAAAAAAAAAAAAAAAwABAAQEPQGQAAUAAAUzBM0AAACaBTMEzQAAAs0AZAKJAAAAAAAAAAAAAAAAgAAIZ0AAAEoAAAAAAAAAAE5PTkUAwAAg+08IYvyiAAAIYgNeAAAAswAAAAAEOgWwAAAAIAADBRQArQU6ABwFOgAcBToAHAUiAJgFIgCYBSIAmAUiAJgENwA9BDcAPQQ3AD0DGAAUAxgAFAQrADwEKwA8BLQAlAS0AJQCXABkAlz/+QJcAGQC1ABMAtQATATbALUE7wC1BO8AtQJqADcCagAOA/YAQQP2AEEETQBRBE0AUQRNAFEEHABTBBwAUwUVALQFEwCEBRMAhAJNAFYC5gA8AuYAPAUZAGcFGQBnBKEAPQS/AI8EvwCPBQQAjgUEAI4FBACOBEgAOwRfADsEXwA7BPkAswT5ALMD7QA8A+0APAZaALUGWgC1BloAtQZaALUGWgC1BloAtQT/AAkE/wAJBMYANwJ0ADcE1QA3BMIAPQcUAJgFQwA8Bl8AlAYbAFEFiQBTBuQAcgWbADwG2wAJBLcAZATVADcEqwBTAfwAAAH8AAAAAP18AAD+8wAA/NEAAPyUAVcADwKgABsCBQA8AjUAJQRoAD8GugCYAAAE4QAAAgcAAAEjAAABLQAAASwAAAIHAAABlQAAAZUAAAGLAAABmQAAALYAAAC2AAACCAAAAO4AAADwAAAAoAAAAZkAAABkAAAAMgAAAGQAAABkBRQArQU6ABwFOgAcBToAHAU6ABwFOgAcBToAHAU6ABwFOgAcB3v/8AT8AKkFNQB3BTUAdwVAAKkFQAAHBIwAqQSMAKkEjACpBIwAqQSMAKkEbACpBXMAegW1AKkCLgC3Ai4AtwIu/+kCLv/RAi7/1ARqADUFBQCpBE8AqQb9AKkFtQCpBbUAqQWCAHYFggB2BYIAdgWCAHYFggB2BYIAdgWCAHYHogBpBQ0AqQS6AKYFggBtBO0AqQTAAFEExgAyBTAAjAUwAIwFMACMBTAAjAUwAIwFGQAdBxkAPQUFADoEzgAPBM4ADwTLAFcEWwBtBFsAbQRbAG0EWwBtBFsAbQRbAG0EWwBtBsIATgR+AIwEMQBcBDEAXASEAF8EsQB+BD8AXQQ/AF0EPwBdBD8AXQQ/AF0CyAA9BH4AYARoAIwCAACSAfwAnAH8AJwB/P/QAfz/uAH8AJAB/P+7Aff/vwH3/78EDwCNAfIAnAcDAIsEawCMBGsAjASRAFwEkQBcBJEAXASRAFwEkQBcBIkAXASRAFwHQwBhBH4AjASdAJUEjQBfArYAjAQhAF8EwgCLAp4ACQRpAIgEaQCIBGkAiARpAIgEaQCIA+EAIQYDACsD+AApA8kAFgPJABYDyQAWA/gAWQWRAD0G1QA9BtUAPQSMAD0EbwAfA5QAkwOkAHsEfwBzBH8AqwR/AF0EfwBfBH8ANQR/AJoEfwCFBH8ATgR/AHEEfwBkAvAAewLwAEIC8AA/AvAANgOjADwGMAB7BboAewYoAD8C8AB7AvAAQgLwAD8B/AAAAfwAAAIdAJABkwAcAfIAhQGyACkFWwCTAhEAoQH1AIsDyQBLA8oARAIYAJMCswCLA3IAHATvAHgDTgASA0kAKQHDAG4CHQCQAjUAJQVAAHgGPwBYA50ABAK+AIUCygAnArYAQAK2ABQCIQCSAiEACgGZACQCxQAkAtcAaQLeADwBmwBgAZsAMAPBAGQDwQBnAmcAbAJnAFoCkgCIAWYAZwcuAGgE+gBlA+oAQwTpAFoGSQBbBkkAWgeNAFAC/QCDAfUAsAHtAJMEYQBoBbQAaQR/AG4EfwBgBKcAWwQ0AA8DDgASBEwAMwRMAIUETABkBEwAMwRMAIUETAB7BEwAjQRMAFwETACGBRQAVARMALwEaQB6BdwAaQAAAGQAAAAyAAAAZAAAAGQAAABk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bmkwNURFB3VuaUZCM0UKbnVuRmluYWxoYgd1bmkwNUUwB3VuaUZCNDAHdW5pMDVFMQd1bmlGQjQxB3VuaTA1RTIJcGVGaW5hbGhiD3BlZGFnZXNoRmluYWxoYgd1bmkwNUU0B3VuaUZCNDQHdW5pRkI0RQx0c2FkaUZpbmFsaGIHdW5pMDVFNgd1bmlGQjQ2B3VuaTA1RTcHdW5pRkI0Nwd1bmkwNUU4B3VuaUZCNDgHdW5pMDVFOQd1bmlGQjJBB3VuaUZCMkIHdW5pRkIyQwd1bmlGQjJEB3VuaUZCNDkHdW5pMDVFQQd1bmlGQjRBB3VuaTA1RjEHdW5pRkIxRAd1bmlGQjFGB3VuaUZCMjAKYWxlZldpZGVoYgtkYWxldFdpZGVoYghoZVdpZGVoYglrYWZXaWRlaGILbGFtZWRXaWRlaGIObWVtRmluYWxXaWRlaGIKcmVzaFdpZGVoYgl0YXZXaWRlaGIHdW5pMDVGMAd1bmkwNUYyB3VuaUZCNEYHdW5pMDBBMAd1bmkyMDBDB3VuaTIwMEQHdW5pMjAwRQd1bmkyMDBGB3VuaTA1RjMHdW5pMDVGNAd1bmkwNUJFB3VuaUZCMjkHdW5pMjBBQQd1bmkwNUMxB3VuaTA1QjAHdW5pMDVCMQd1bmkwNUIyB3VuaTA1QjMHdW5pMDVCNAd1bmkwNUI1B3VuaTA1QjYHdW5pMDVCNwd1bmkwNUI4B3VuaTA1QjkHdW5pMDVCQQd1bmkwNUJCB3VuaTA1QkMHdW5pMDVCRgd1bmkwNUMyB3VuaTA1QzcHdW5pMDMwOAd1bmkwMzA3CWFjdXRlY29tYgd1bmkwMzA2CS5ub3RkZWYuMQNBLjEIQWFjdXRlLjEIQWJyZXZlLjEJaS5sb2NsVFJLB3VuaTAyMzcDZl9mBWZfZl9pBWZfZl9sA2ZfbAdvbmUuc3VwB3R3by5zdXAJdGhyZWUuc3VwCGZvdXIuc3VwB3VuaTAwQjkHdW5pMDBCMgd1bmkwMEIzB3NwYWNlLjEJdW5pMDBBMC4xFnBlcmlvZGNlbnRlcmVkLmxvY2xDQVQbcGVyaW9kY2VudGVyZWQubG9jbENBVC5jYXNlCGh5cGhlbi4xBEV1cm8HdW5pMjIxNQd1bmkwMEI1CXVuaTAzMDguMQl1bmkwMzA3LjEJZ3JhdmVjb21iC2FjdXRl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';
+  doc.addFileToVFS('Heebo-Regular.ttf', fontB64);
+  doc.addFont('Heebo-Regular.ttf', 'Heebo', 'normal');
+  doc.setFont('Heebo');
+
+  const W = 210, margin = 18;
+  const contentW = W - margin*2;
+  let y = 18;
+
+  function reverseHebrew(text) {
+    if (!text) return '';
+    const str = String(text);
+    const hasHebrew = /[\u05D0-\u05EA]/.test(str);
+    if (!hasHebrew) return str;
+    return str.split('').reverse().join('');
+  }
+
+  function rtxt(text, x, yPos) {
+    doc.text(reverseHebrew(String(text||'')), x, yPos, { align: 'right' });
+  }
+
+  function ltxt(text, x, yPos) {
+    doc.text(String(text||''), x, yPos, { align: 'left' });
+  }
+
+  function ctxt(text, x, yPos) {
+    doc.text(reverseHebrew(String(text||'')), x, yPos, { align: 'center' });
+  }
+
+  function setF(size, style='normal') {
+    doc.setFontSize(size);
+    doc.setFont('Heebo', style);
+  }
+
+  function hline(x1,y1,x2,y2, gray=0) {
+    doc.setDrawColor(gray,gray,gray);
+    doc.line(x1,y1,x2,y2);
+  }
+
+  function fillRect(x,ry,w,h, r,g,b) {
+    doc.setFillColor(r,g,b);
+    doc.rect(x,ry,w,h,'F');
+  }
+
+  function fmtNIS(n) {
+    return '\u20AA' + Number(Math.round(n)).toLocaleString('en');
+  }
+
+  // ── כותרת ──
+  // צד ימין — "קבלה" גדול ומתחתיו שם העסק
+  doc.setFontSize(38);
+  doc.setFont('Heebo');
+  rtxt('קבלה', W-margin, y+10);
+
+  setF(13);
+  rtxt('עמית ברנר הרצאות', W-margin, y+19);
+  setF(9);
+  doc.setTextColor(100,100,100);
+  rtxt('213997604 עוסק פטור', W-margin, y+25);
+  rtxt('amitbn455@gmail.com | 058-519-2003', W-margin, y+31);
+  doc.setTextColor(0,0,0);
+
+  // צד שמאל — מספר קבלה ותאריך
+  setF(9);
+  doc.setTextColor(100,100,100);
+  ltxt(data.recNum||'—', margin, y+4);
+  ltxt(data.recDate||'—', margin, y+10);
+  doc.setTextColor(0,0,0);
+
+  y += 36;
+  hline(margin, y, W-margin, y, 0);
+  hline(margin, y+0.4, W-margin, y+0.4, 0);
+  y += 6;
+
+  // ── הפניה לחשבון ──
+  if (data.recRef) {
+    fillRect(margin, y-2, contentW, 8, 245,245,242);
+    setF(9);
+    doc.setTextColor(80,80,80);
+    rtxt(data.recRef, W-margin, y+3);
+    doc.setTextColor(0,0,0);
+    y += 12;
+  }
+
+  // ── לקוח — כותרות ונתונים מיושרים ──
+  const col1x = W-margin;          // לכבוד — ימין
+  const col2x = W-margin-contentW/2; // טלפון — מרכז
+  fillRect(margin, y-2, contentW, 18, 248,248,248);
+  setF(8);
+  doc.setTextColor(150,150,150);
+  rtxt('לכבוד', col1x, y+3);
+  rtxt('טלפון', col2x, y+3);
+  setF(11);
+  doc.setTextColor(0,0,0);
+  rtxt(currentQ.client||'—', col1x, y+12);
+  ltxt(currentQ.cphone||'—', col2x-30, y+12);
+  y += 22;
+
+  // ── טבלת פריטים ──
+  hline(margin, y, W-margin, y);
+  y += 5;
+  setF(8);
+  doc.setTextColor(100,100,100);
+  // כותרות טבלה
+  const c1 = W-margin;           // פירוט — ימין
+  const c2 = margin+contentW*0.42; // כמות — מרכז
+  const c3 = margin+contentW*0.27; // מחיר — מרכז
+  const c4 = margin+contentW*0.12; // סה"כ — מרכז
+  rtxt('פירוט', c1, y);
+  doc.text(reverseHebrew('כמות'), c2, y, {align:'center'});
+  doc.text(reverseHebrew('מחיר'), c3, y, {align:'center'});
+  doc.text(reverseHebrew('סה"כ'), c4, y, {align:'center'});
+  y += 2;
+  hline(margin, y, W-margin, y);
+  y += 7;
+  doc.setTextColor(0,0,0);
+
+  data.recItems.forEach((it, i) => {
+    if (i % 2 === 0) fillRect(margin, y-5, contentW, 8, 252,252,252);
+    setF(10);
+    rtxt(it.desc||'', c1, y);
+    doc.text(String(it.qty), c2, y, {align:'center'});
+    doc.text(String(Math.round(it.price)), c3, y, {align:'center'});
+    doc.text(String(Math.round(it.qty*it.price)), c4, y, {align:'center'});
+    y += 9;
+  });
+
+  hline(margin, y, W-margin, y);
+  y += 4;
+
+  // ── סה"כ ──
+  setF(14);
+  doc.setTextColor(106,27,154);
+  ltxt(fmtNIS(data.recGrand), margin+5, y+8);
+  setF(11);
+  rtxt('סה"כ התקבל', W-margin-5, y+8);
+  doc.setTextColor(0,0,0);
+  y += 18;
+
+  // ── פרטי תשלום — 3 עמודות שוות ──
+  const pw = contentW/3;
+  fillRect(margin, y-2, contentW, 22, 245,250,247);
+  doc.setDrawColor(180,220,190);
+  doc.rect(margin, y-2, contentW, 22, 'S');
+
+  setF(8);
+  doc.setTextColor(150,150,150);
+  // כותרות — מרכז כל עמודה
+  doc.text(reverseHebrew('אמצעי תשלום'), margin+pw*2.5, y+4, {align:'center'});
+  doc.text(reverseHebrew('תאריך תשלום'), margin+pw*1.5, y+4, {align:'center'});
+  doc.text(reverseHebrew('מס׳ אסמכתא'), margin+pw*0.5, y+4, {align:'center'});
+
+  setF(10);
+  doc.setTextColor(0,0,0);
+  // נתונים — מרכז כל עמודה
+  doc.text(reverseHebrew(data.recMethod||'—'), margin+pw*2.5, y+13, {align:'center'});
+  ltxt(data.recPayDate||'—', margin+pw*1.5-10, y+13);
+  ltxt(data.recRefNum||'—', margin+pw*0.5-8, y+13);
+  y += 26;
+
+  // ── הערות ──
+  if (data.recNotes) {
+    setF(8);
+    doc.setTextColor(150,150,150);
+    rtxt('הערות', W-margin, y+4);
+    setF(9);
+    doc.setTextColor(60,60,60);
+    rtxt(data.recNotes, W-margin, y+10);
+    y += 14;
+  }
+
+  // ── פוטר ──
+  const footerY = 282;
+  hline(margin, footerY, W-margin, footerY, 200);
+  setF(8);
+  doc.setTextColor(150,150,150);
+  rtxt('213997604 עוסק פטור · עמית ברנר הרצאות', W-margin, footerY+5);
+  ltxt(data.recNum||'', margin, footerY+5);
+
+  const filename = 'קבלה-'+(data.recNum||'')+(currentQ.client?'-'+currentQ.client:'')+'.pdf';
+  doc.save(filename);
+
+  // שמור נתונים אחרי יצירת ה-PDF
+  saveReceiptData(data);
+  showToast('קבלה נוצרה ✓');
+  renderHome();
+}
+
+function generateReceiptPdfFromList(qid) {
+  currentQ = quotes.find(q => q.id == qid);
+  if (!currentQ) return;
+
+  // מלא את שדות המסך מהנתונים השמורים
+  document.getElementById('rec-date').value     = currentQ.recDate    || '';
+  document.getElementById('rec-num').value      = currentQ.recNum     || '';
+  document.getElementById('rec-ref').value      = currentQ.recRef     || '';
+  document.getElementById('rec-pay-date').value = currentQ.recPayDate || '';
+  document.getElementById('rec-ref-num').value  = currentQ.recRefNum  || '';
+  document.getElementById('rec-notes').value    = currentQ.recNotes   || '';
+  document.getElementById('rec-method').value   = currentQ.recMethod  || 'העברה בנקאית';
+  document.getElementById('rec-items-list').innerHTML = '';
+  recN = 0;
+  (currentQ.recItems||[]).forEach(it => addRecItem(it.desc, it.qty, it.price));
+
+  generateReceiptPdf();
+}
+
+// ════════════════════════
+// GOOGLE CALENDAR
+// ════════════════════════
+function parseDate(ddmmyyyy) {
+  // קלט: DD.MM.YYYY → Date object
+  if (!ddmmyyyy) return null;
+  const parts = ddmmyyyy.split('.');
+  if (parts.length !== 3) return null;
+  return new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+}
+
+function toGCalDate(date) {
+  // YYYYMMDD
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  return y+''+m+''+d;
+}
+
+function toGCalDateTime(date, hour) {
+  // YYYYMMDDTHHmmss
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  return y+''+m+''+d+'T'+String(hour).padStart(2,'0')+'0000';
+}
+
+function prevSaturday(date) {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=Sun,6=Sat
+  // days to go back to reach Saturday
+  const diff = day === 6 ? 7 : (day + 1); // if already Sat, go back 7
+  d.setDate(d.getDate() - diff);
+  return d;
+}
+
+function buildGCalUrl(params) {
+  const base = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
+  return base + '&text=' + encodeURIComponent(params.title)
+    + '&dates=' + encodeURIComponent(params.dates)
+    + (params.details ? '&details=' + encodeURIComponent(params.details) : '')
+    + (params.location ? '&location=' + encodeURIComponent(params.location) : '');
+}
+
+function addToCalendar() {
+  if (!currentQ) return;
+
+  const ldate = parseDate(currentQ.ldate);
+  if (!ldate) {
+    alert('לא הוזן תאריך ביצוע להצעה זו.\nנא לערוך את ההצעה ולהוסיף תאריך ביצוע.');
+    return;
+  }
+
+  const client = currentQ.client || 'לקוח';
+  const qnum   = currentQ.qnum  || '';
+
+  // אירוע 1: ההרצאה — 19:00–20:00
+  const start1 = toGCalDateTime(ldate, 19);
+  const end1   = toGCalDateTime(ldate, 20);
+  const url1   = buildGCalUrl({
+    title:   'הרצאה — ' + client,
+    dates:   start1 + '/' + end1,
+    details: qnum ? 'הצעה מס׳ ' + qnum : ''
+  });
+
+  // אירוע 2: שבת לפני — יום שלם
+  const sat     = prevSaturday(ldate);
+  const satStr  = toGCalDate(sat);
+  const satNext = toGCalDate(new Date(sat.getTime() + 86400000));
+  const url2    = buildGCalUrl({
+    title: 'מזכיר שיש הרצאה השבוע — ' + client,
+    dates: satStr + '/' + satNext
+  });
+
+  // פתח אירוע ראשון
+  window.open(url1, '_blank');
+
+  // הצג toast עם קישור לאירוע השני
+  const t = document.getElementById('toast');
+  t.innerHTML = `שמרת? <a href="${url2}" target="_blank"
+    style="color:#fff;text-decoration:underline;font-weight:800">הוסף תזכורת שבת ←</a>`;
+  t.style.background = '#1a73e8';
+  t.style.display = 'block';
+  // לא נעלם אוטומטית — המשתמש לוחץ על הקישור או עובר מסך
+  setTimeout(() => t.style.display = 'none', 12000);
+}
+
+// ════════════════════════
+// INIT
+// ════════════════════════
+loadData();
+</script>
+</body>
+</html>
