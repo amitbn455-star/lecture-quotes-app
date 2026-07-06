@@ -888,6 +888,20 @@ body {
 </div>
 
 <!-- ════════════════════════
+     WAITING FOR PAYMENT SCREEN
+════════════════════════ -->
+<div class="screen" id="screen-waiting">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">ממתינים לתשלום</div>
+      <div class="topbar-sub">חשבונות שהופקו וטרם שולמה עליהם קבלה</div>
+    </div>
+  </div>
+  <div id="waiting-list" style="margin-top:12px"></div>
+  <div style="height:80px"></div>
+</div>
+
+<!-- ════════════════════════
      BOTTOM NAV
 ════════════════════════ -->
 <div class="bottom-nav" id="bottom-nav">
@@ -899,6 +913,9 @@ body {
   </button>
   <button class="nav-btn" id="nav-receipts" onclick="showReceiptsScreen()">
     <span class="nav-icon">🧾</span>קבלות
+  </button>
+  <button class="nav-btn" id="nav-waiting" onclick="showWaitingScreen()">
+    <span class="nav-icon">⏳</span>ממתינים
   </button>
   <button class="nav-btn" id="nav-clients" onclick="showClientsScreen()">
     <span class="nav-icon">👥</span>לקוחות
@@ -1013,32 +1030,48 @@ let printMode = '';
 let itemN = 0;
 let extraN = 0;
 let isSaving = false;
+let pendingSave = false;
 
 // ════════════════════════
 // GOOGLE SHEETS SYNC
 // ════════════════════════
 async function save(silent) {
-  if (isSaving) return;
+  if (isSaving) { pendingSave = true; return; }
+  await _doSave(silent);
+}
+
+async function _doSave(silent) {
   isSaving = true;
+  pendingSave = false;
   if (!silent) showToast('שומר...', false, true);
-  try {
-    const payload = JSON.stringify({ quotes, clients });
-    const res = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: payload,
-      headers: { 'Content-Type': 'text/plain' }
-    });
-    const text = await res.text();
-    const result = JSON.parse(text);
-    if (result.ok) {
-      if (!silent) showToast('נשמר ✓');
-    } else {
-      if (!silent) showToast('שגיאה בשמירה', true);
+  const RETRIES = 3, DELAY = 1500;
+  let networkFailed = false;
+  for (let attempt = 1; attempt <= RETRIES; attempt++) {
+    try {
+      const payload = JSON.stringify({ quotes, clients });
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: payload,
+        headers: { 'Content-Type': 'text/plain' }
+      });
+      const result = JSON.parse(await res.text());
+      networkFailed = false;
+      if (result.ok) {
+        if (!silent) showToast('נשמר ✓');
+      } else {
+        showToast('שגיאה בשמירה — נסה שוב', true);
+      }
+      break;
+    } catch(e) {
+      networkFailed = true;
+      if (attempt < RETRIES) await new Promise(r => setTimeout(r, DELAY));
     }
-  } catch(e) {
-    if (!silent) showToast('שגיאה בשמירה — בדוק חיבור לאינטרנט', true);
+  }
+  if (networkFailed) {
+    showToast('שמירה נכשלה (' + RETRIES + ' ניסיונות) — בדוק אינטרנט ונסה שוב!', true);
   }
   isSaving = false;
+  if (pendingSave) await _doSave(false);
 }
 
 async function loadData() {
@@ -1104,7 +1137,7 @@ function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   const nav = document.getElementById('bottom-nav');
-  nav.style.display = ['screen-home','screen-clients','screen-receipts'].includes(id) ? 'flex' : 'none';
+  nav.style.display = ['screen-home','screen-clients','screen-receipts','screen-waiting'].includes(id) ? 'flex' : 'none';
   window.scrollTo(0,0);
 }
 
@@ -1419,6 +1452,7 @@ async function setStatus(status) {
   renderDetailStatus();
   renderTracker();
   renderHome();
+  renderWaiting();
 }
 
 function renderDetailStatus() {
@@ -1662,6 +1696,7 @@ function deleteReceipt(qid) {
   save();
   renderReceipts();
   renderHome();
+  renderWaiting();
   showToast('קבלה נמחקה ✓');
 }
 
@@ -1669,6 +1704,56 @@ function openReceiptFromList(qid) {
   currentQ = quotes.find(q=>q.id==qid);
   if (!currentQ) return;
   openReceiptFlow();
+}
+
+// ════════════════════════
+// WAITING FOR PAYMENT
+// ════════════════════════
+function showWaitingScreen() {
+  renderWaiting();
+  showScreen('screen-waiting');
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('nav-waiting').classList.add('active');
+}
+
+function renderWaiting() {
+  const list = document.getElementById('waiting-list');
+  if (!list) return;
+  list.innerHTML = '';
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const rows = quotes
+    .filter(q => q.status === 'invoiced' && q.receipted !== true)
+    .map(q => {
+      const d = parseDate(q.invDate);
+      const days = d ? Math.round((today - d) / 86400000) : -1;
+      return { q, days };
+    })
+    .sort((a,b) => b.days - a.days);
+
+  if (!rows.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div>אין הצעות שממתינות לתשלום.</div>';
+    return;
+  }
+
+  rows.forEach(({q, days}) => {
+    const div = document.createElement('div');
+    div.className = 'tracker-row';
+    const daysLabel = days < 0 ? '' : days === 0 ? 'היום' : days === 1 ? 'יום אחד' : days + ' ימים';
+    div.innerHTML = `
+      <div class="tracker-info">
+        <div class="tracker-client">${q.client||'ללא שם'}</div>
+        <div class="tracker-meta">${q.invNum||''} · ${q.invDate||''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <span class="tracker-amount">${fmt(q.grand)}</span>
+        <span class="badge badge-orange">${daysLabel}</span>
+      </div>`;
+    div.onclick = () => openDetail(q.id);
+    list.appendChild(div);
+  });
 }
 
 // ════════════════════════
@@ -1975,6 +2060,7 @@ function saveReceiptData(data) {
   if (idx < 0) return;
   Object.assign(quotes[idx], data, { receipted: true, status: 'paid' });
   currentQ = quotes[idx];
+  renderWaiting();
   // שמור בשקט — אל תעצור אם נכשל
   save(true).catch(()=>{});
 }
