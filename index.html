@@ -1031,6 +1031,8 @@ let itemN = 0;
 let extraN = 0;
 let isSaving = false;
 let pendingSave = false;
+let loadOk = false;        // האם הטעינה האחרונה מהגיליון הצליחה
+let lastLoadedCount = 0;   // כמה הצעות נטענו בפעם האחרונה
 
 // ════════════════════════
 // GOOGLE SHEETS SYNC
@@ -1041,6 +1043,16 @@ async function save(silent) {
 }
 
 async function _doSave(silent) {
+  // הגנה מפני דריסת נתונים: לא שומרים אם הטעינה האחרונה נכשלה
+  if (!loadOk) {
+    showToast('לא נשמר — הנתונים לא נטענו. לחץ ↻ לטעינה מחדש', true);
+    return;
+  }
+  // הגנה: לא שומרים רשימה ריקה אם נטענו נתונים קודם
+  if (lastLoadedCount > 0 && quotes.length === 0) {
+    showToast('לא נשמר — הרשימה ריקה. לחץ ↻ לטעינה מחדש', true);
+    return;
+  }
   isSaving = true;
   pendingSave = false;
   if (!silent) showToast('שומר...', false, true);
@@ -1076,16 +1088,31 @@ async function _doSave(silent) {
 
 async function loadData() {
   showLoading(true);
-  try {
-    const res = await fetch(SCRIPT_URL + '?action=load&t=' + Date.now());
-    const text = await res.text();
-    const data = text && text !== '{}' ? JSON.parse(text) : {};
-    quotes  = data.quotes  || [];
-    clients = data.clients || [];
-  } catch(e) {
-    showToast('שגיאה בטעינה — בדוק חיבור לאינטרנט', true);
+  let ok = false;
+  for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+    try {
+      const res = await fetch(SCRIPT_URL + '?action=load&t=' + Date.now());
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      const data = text && text.trim() !== '' ? JSON.parse(text) : {};
+      if (!data || typeof data !== 'object' || Array.isArray(data) || data.error) throw new Error('bad payload');
+      if (!Array.isArray(data.quotes) && !Array.isArray(data.clients)) {
+        // חיבור תקין אבל אין נתונים בגיליון: מותר רק אם גם בעבר לא נטענו נתונים
+        if (lastLoadedCount > 0) throw new Error('empty payload after data');
+      }
+      quotes  = data.quotes  || [];
+      clients = data.clients || [];
+      lastLoadedCount = quotes.length;
+      ok = true;
+    } catch(e) {
+      if (attempt < 3) await new Promise(r => setTimeout(r, 1200));
+    }
   }
+  loadOk = ok;
   showLoading(false);
+  if (!ok) {
+    showToast('הנתונים לא נטענו — השמירה חסומה כדי לא למחוק. לחץ ↻', true, true);
+  }
   renderHome();
 }
 
@@ -1119,15 +1146,27 @@ function dueDate(days) {
   return String(t.getDate()).padStart(2,'0')+'.'+String(t.getMonth()+1).padStart(2,'0')+'.'+t.getFullYear();
 }
 
+// המספר הבא = המספר הגבוה ביותר הקיים + 1 (ולא ספירה), כדי שמחיקה לא תיצור מספרים כפולים
+function maxSeq(values, prefix) {
+  let max = 0;
+  values.forEach(v => {
+    if (v && v.startsWith(prefix)) {
+      const n = parseInt(v.slice(prefix.length), 10);
+      if (!isNaN(n) && n > max) max = n;
+    }
+  });
+  return max;
+}
+
 function nextQNum() {
   const yr = new Date().getFullYear();
-  const n = quotes.filter(q=>q.qnum&&q.qnum.startsWith(yr+'')).length + 1;
+  const n = maxSeq(quotes.map(q=>q.qnum), yr+'-') + 1;
   return yr+'-'+String(n).padStart(3,'0');
 }
 
 function nextInvNum() {
   const yr = new Date().getFullYear();
-  const n = quotes.filter(q => q.invNum && q.invNum.startsWith('INV-'+yr)).length + 1;
+  const n = maxSeq(quotes.map(q=>q.invNum), 'INV-'+yr+'-') + 1;
   return 'INV-'+yr+'-'+String(n).padStart(3,'0');
 }
 
@@ -1965,7 +2004,7 @@ let recN = 0;
 
 function nextRecNum() {
   const yr = new Date().getFullYear();
-  const n = quotes.filter(q => q.recNum && q.recNum.startsWith('REC-'+yr)).length + 1;
+  const n = maxSeq(quotes.map(q=>q.recNum), 'REC-'+yr+'-') + 1;
   return 'REC-'+yr+'-'+String(n).padStart(3,'0');
 }
 
