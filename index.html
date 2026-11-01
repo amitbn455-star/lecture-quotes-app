@@ -1238,7 +1238,41 @@ function startNewQuote() {
   document.getElementById('f-items-list').innerHTML = '';
   addItem('הרצאה', 1, 1500);
   calcForm();
+  travelPrev.f = hasTravel('f');
   showScreen('screen-form');
+}
+
+// ── הערת נסיעות אוטומטית ──
+const TRAVEL_NOTE = 'נסיעות מחושבות לפי שקל לקילומטר';
+const travelPrev = { f: false, inv: false };
+
+function hasTravel(kind) {
+  const sel = kind === 'f' ? '#f-items-list .item-desc' : '#inv-extra-list .item-desc';
+  let descs = [...document.querySelectorAll(sel)].map(e => e.value);
+  if (kind === 'inv') descs = descs.concat((currentQ && currentQ.items || []).map(i => i.desc));
+  return descs.some(d => /נסיע/.test(d || ''));
+}
+
+// allowRemove: מסיר את ההערה רק ברגע שסעיף הנסיעות נמחק (מעבר מיש לאין), ולא נוגע בהערות שנכתבו ידנית
+function syncTravel(kind, allowRemove) {
+  const ta = document.getElementById(kind === 'f' ? 'f-notes' : 'inv-notes');
+  const has = hasTravel(kind);
+  const v = ta.value;
+  const hasNote = v.includes(TRAVEL_NOTE);
+  if (has && !hasNote) {
+    ta.value = (v.trim() ? v.replace(/\s+$/, '') + '\n' : '') + TRAVEL_NOTE;
+  } else if (!has && allowRemove && travelPrev[kind] && hasNote) {
+    ta.value = v.replace(TRAVEL_NOTE, '').split('\n').map(s => s.trim()).filter(Boolean).join('\n');
+  }
+  travelPrev[kind] = has;
+}
+
+function onItemChange() { calcForm(); syncTravel('f', true); }
+function onInvChange()  { calcInvoice(); syncTravel('inv', true); }
+
+// ── שמות קבצים ──
+function safeFileName(s) {
+  return String(s || '').replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
 }
 
 function addItem(d, q, p) {
@@ -1248,9 +1282,9 @@ function addItem(d, q, p) {
   el.innerHTML = `
     <div class="item-head">
       <span class="item-label">פריט ${itemN}</span>
-      <button class="del-btn" onclick="this.closest('.item-card').remove();renumItems();calcForm()">✕</button>
+      <button class="del-btn" onclick="this.closest('.item-card').remove();renumItems();onItemChange()">✕</button>
     </div>
-    <input class="item-desc" type="text" value="${d||''}" placeholder="תיאור השירות / ההרצאה" oninput="calcForm()">
+    <input class="item-desc" type="text" value="${d||''}" placeholder="תיאור השירות / ההרצאה" oninput="onItemChange()">
     <div class="nums">
       <div><label>כמות</label><input type="number" value="${q||1}" min="1" oninput="calcForm()"></div>
       <div><label>מחיר ₪</label><input type="number" value="${p||0}" min="0" oninput="calcForm()"></div>
@@ -1287,6 +1321,7 @@ function getFormData() {
     const ins = c.querySelectorAll('.nums input');
     items.push({ desc: c.querySelector('.item-desc').value, qty: parseFloat(ins[0].value)||1, price: parseFloat(ins[1].value)||0 });
   });
+  syncTravel('f', false);
   const disc  = parseFloat(document.getElementById('f-disc').value)||0;
   const sub   = items.reduce((a,i)=>a+i.qty*i.price,0);
   const grand = sub*(1-disc/100);
@@ -1385,6 +1420,7 @@ function editQuote() {
   document.getElementById('f-items-list').innerHTML = '';
   (currentQ.items||[]).forEach(it=>addItem(it.desc, it.qty, it.price));
   calcForm();
+  travelPrev.f = hasTravel('f');
   showScreen('screen-form');
 }
 
@@ -1423,6 +1459,8 @@ function openInvoiceFlow() {
   (currentQ.invExtras||[]).forEach(it=>addExtraItem(it.desc, it.qty, it.price));
 
   calcInvoice();
+  // חשבון שכבר הוצא לא משתנה בפתיחה; חשבון חדש מקבל את הערת הנסיעות אם צריך
+  if (currentQ.invoiced) travelPrev.inv = hasTravel('inv'); else syncTravel('inv', false);
   showScreen('screen-invoice');
 }
 
@@ -1433,9 +1471,9 @@ function addExtraItem(d, q, p) {
   el.innerHTML = `
     <div class="item-head">
       <span class="item-label" style="color:var(--orange)">תוספת ${extraN}</span>
-      <button class="del-btn" onclick="this.closest('.extra-item-card').remove();calcInvoice()">✕</button>
+      <button class="del-btn" onclick="this.closest('.extra-item-card').remove();onInvChange()">✕</button>
     </div>
-    <input class="item-desc" type="text" value="${d||''}" placeholder="תיאור התוספת" oninput="calcInvoice()" style="font-family:'Assistant',sans-serif;font-size:16px;font-weight:600;border:none;width:100%;background:transparent;outline:none;direction:rtl;text-align:right;margin-bottom:10px">
+    <input class="item-desc" type="text" value="${d||''}" placeholder="תיאור התוספת" oninput="onInvChange()" style="font-family:'Assistant',sans-serif;font-size:16px;font-weight:600;border:none;width:100%;background:transparent;outline:none;direction:rtl;text-align:right;margin-bottom:10px">
     <div class="nums">
       <div><label>כמות</label><input type="number" value="${q||1}" min="1" oninput="calcInvoice()"></div>
       <div><label>מחיר ₪</label><input type="number" value="${p||0}" min="0" oninput="calcInvoice()"></div>
@@ -1994,6 +2032,13 @@ function fillPdfInvoice() {
 function doPrint() {
   closeOverlay('overlay-pdf');
   document.body.classList.add('printing-quote');
+  // שם הקובץ ב"שמור כ-PDF" נלקח מכותרת הדף
+  const oldTitle = document.title;
+  const kind = printMode === 'quote' ? 'הצעת מחיר' : 'חשבון עסקה';
+  document.title = kind + (currentQ && currentQ.client ? ' - ' + safeFileName(currentQ.client) : '');
+  const restore = () => { document.title = oldTitle; window.removeEventListener('afterprint', restore); };
+  window.addEventListener('afterprint', restore);
+  setTimeout(restore, 120000);
   setTimeout(()=>{ window.print(); document.body.classList.remove('printing-quote'); }, 200);
 }
 
@@ -2290,7 +2335,7 @@ function generateReceiptPdf() {
   rtxt('213997604 עוסק פטור · עמית ברנר הרצאות', W-margin, footerY+5);
   ltxt(data.recNum||'', margin, footerY+5);
 
-  const filename = 'קבלה-'+(data.recNum||'')+(currentQ.client?'-'+currentQ.client:'')+'.pdf';
+  const filename = 'קבלה' + (currentQ.client ? ' - ' + safeFileName(currentQ.client) : '') + '.pdf';
   doc.save(filename);
 
   // שמור נתונים אחרי יצירת ה-PDF
