@@ -2440,14 +2440,32 @@ function addToCalendar() {
   // פתח אירוע ראשון
   window.open(url1, '_blank');
 
-  // הצג toast עם קישור לאירוע השני
+  // הצג toast עם קישורים: תזכורת שבת + תזמון חשבון עסקה אוטומטי מיד אחרי ההרצאה
+  const urlClaude = buildClaudeScheduleUrl(client, qnum, currentQ.ldate);
+  const linkStyle = 'color:#fff;text-decoration:underline;font-weight:800';
   const t = document.getElementById('toast');
-  t.innerHTML = `שמרת? <a href="${url2}" target="_blank"
-    style="color:#fff;text-decoration:underline;font-weight:800">הוסף תזכורת שבת ←</a>`;
+  t.style.whiteSpace = 'normal';
+  t.style.maxWidth = '88vw';
+  t.style.textAlign = 'center';
+  t.innerHTML = `אחרי ששמרת ביומן:<br>`
+    + `<a href="${urlClaude}" target="_blank" style="${linkStyle}">⏰ תזמן חשבון עסקה אחרי ההרצאה ←</a><br>`
+    + `<a href="${url2}" target="_blank" style="${linkStyle}">הוסף תזכורת שבת ←</a>`;
   t.style.background = '#1a73e8';
   t.style.display = 'block';
   // לא נעלם אוטומטית — המשתמש לוחץ על הקישור או עובר מסך
-  setTimeout(() => t.style.display = 'none', 12000);
+  setTimeout(() => { t.style.display = 'none'; t.style.whiteSpace = 'nowrap'; t.style.maxWidth = ''; }, 25000);
+}
+
+// קישור שפותח סשן קלוד עם הנחיה מוכנה (צריך ללחוץ שליחה): מוסיף את האירוע ליומן אם אינו קיים
+// ומתזמן משימה שמוציאה את החשבון 10 דקות אחרי שההרצאה מסתיימת
+function buildClaudeScheduleUrl(client, qnum, ldate) {
+  const prompt = 'תזמן הוצאת חשבון עסקה אוטומטית אחרי ההרצאה.\n'
+    + 'לקוח: ' + client + '\n'
+    + 'הצעה: ' + (qnum || '—') + '\n'
+    + 'תאריך: ' + ldate + '\n'
+    + 'שעות: 19:00–20:00 (אפשר לשנות כאן)\n'
+    + 'הריפו מחובר: קרא את tools/RUNBOOK.md ובצע את הסעיף "תזמון הרצאה חדשה".';
+  return 'https://claude.ai/code?repositories=amitbn455-star/lecture-quotes-app&prompt=' + encodeURIComponent(prompt);
 }
 
 // ════════════════════════
