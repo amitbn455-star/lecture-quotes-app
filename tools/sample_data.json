@@ -1,0 +1,63 @@
+{
+ "quotes": [
+  {
+   "id": 1783400000009,
+   "client": "לקוח ישן לדוגמה",
+   "cphone": "050-0000000",
+   "cemail": "",
+   "cid": "",
+   "qdate": "28.06.2026",
+   "qnum": "2026-009",
+   "ldate": "21.07.2026",
+   "valid": "",
+   "notes": "",
+   "payment": "שוטף+30",
+   "disc": 0,
+   "items": [
+    {
+     "desc": "הרצאה",
+     "qty": 1,
+     "price": 1500
+    }
+   ],
+   "sub": 1500,
+   "grand": 1500,
+   "invoiced": true,
+   "invNum": "INV-2026-005",
+   "invDate": "21.07.2026",
+   "status": "paid",
+   "receipted": true,
+   "recNum": "REC-2026-007"
+  },
+  {
+   "id": 1792391902125,
+   "client": "לקוח לדוגמה",
+   "cphone": "050-0000000",
+   "cemail": "example@example.com",
+   "cid": "",
+   "qdate": "19.10.2026",
+   "qnum": "2026-014",
+   "ldate": "25.10.2026",
+   "valid": "18.11.2026",
+   "notes": "נסיעות מחושבות לפי שקל לקילומטר",
+   "payment": "",
+   "disc": 0,
+   "items": [
+    {
+     "desc": "הרצאה",
+     "qty": 1,
+     "price": 500
+    },
+    {
+     "desc": "נסיעות תל אביב-איבים (הלוך חזור)",
+     "qty": 2,
+     "price": 77
+    }
+   ],
+   "sub": 654,
+   "grand": 654,
+   "invoiced": false
+  }
+ ],
+ "clients": []
+}
