@@ -1114,6 +1114,22 @@ async function loadData() {
     showToast('הנתונים לא נטענו — השמירה חסומה כדי לא למחוק. לחץ ↻', true, true);
   }
   renderHome();
+  handleDeepLink();
+}
+
+// קישור מהתראה אחרי הרצאה: ?invoice=<id של ההצעה> פותח את מסך החשבון מוכן להפקה
+let deepLinkDone = false;
+function handleDeepLink() {
+  if (deepLinkDone || !loadOk) return;
+  deepLinkDone = true;
+  let id = null;
+  try { id = new URLSearchParams(location.search).get('invoice'); } catch(e) {}
+  if (!id) return;
+  try { history.replaceState(null, '', location.pathname); } catch(e) {}
+  const q = quotes.find(x => String(x.id) === String(id));
+  if (!q) { showToast('ההצעה מהקישור לא נמצאה', true); return; }
+  currentQ = q;
+  openInvoiceFlow();
 }
 
 function showLoading(on) {
@@ -1965,6 +1981,7 @@ function fillPdfInvoice() {
     quotes[idx].invPayment = document.getElementById('inv-payment').value;
     quotes[idx].invDisc   = parseFloat(document.getElementById('inv-disc').value)||0;
     quotes[idx].invExtras = extras;
+    if (quotes[idx].status !== 'paid') quotes[idx].status = 'invoiced';
     currentQ = quotes[idx];
   }
 
@@ -2031,6 +2048,7 @@ function fillPdfInvoice() {
 
 function doPrint() {
   closeOverlay('overlay-pdf');
+  if (printMode === 'invoice') save();  // החשבון הוצא: נשמר בגיליון עם סטטוס "חשבון הוצא"
   document.body.classList.add('printing-quote');
   // שם הקובץ ב"שמור כ-PDF" נלקח מכותרת הדף
   const oldTitle = document.title;
