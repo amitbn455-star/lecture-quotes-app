@@ -405,7 +405,7 @@ body {
   @page { margin: 15mm 18mm; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   body { background: #fff; padding: 0; }
-  .screen, .topbar, .bottom-nav, .bottom-bar, .overlay { display: none !important; }
+  .screen, .topbar, .bottom-nav, .bottom-bar, .overlay, #toast, #loading-bar { display: none !important; }
   .pdf-doc { display: block !important; }
 
   .pdf-title { font-size: 54px; font-weight: 800; letter-spacing: -.04em; line-height: 1; margin-bottom: 4px; }
@@ -428,7 +428,7 @@ body {
   .pdf-tag.extra { background: #fff0e6; color: #c45000; }
   .pdf-totals { display: flex !important; margin-top: 20px; padding-top: 16px; border-top: 2px solid #111; }
   .pdf-totals-inner { min-width: 200px; }
-  .pdf-tot-row { display: flex !important; justify-content: space-between; gap: 36px; padding: 4px 0; border-bottom: 1px solid #eee; font-size: 13px; }
+  .pdf-tot-row { display: flex; justify-content: space-between; gap: 36px; padding: 4px 0; border-bottom: 1px solid #eee; font-size: 13px; }
   .pdf-tot-row:last-child { border-bottom: none; font-size: 16px; font-weight: 800; padding-top: 8px; }
   .tl { color: #777; font-weight: 500; }
   .tv { font-weight: 700; }
@@ -2046,9 +2046,12 @@ function fillPdfInvoice() {
   document.getElementById('pdf-sigs').innerHTML = '';
 }
 
-function doPrint() {
+async function doPrint() {
   closeOverlay('overlay-pdf');
-  if (printMode === 'invoice') save();  // החשבון הוצא: נשמר בגיליון עם סטטוס "חשבון הוצא"
+  // החשבון הוצא: נשמר בגיליון עם סטטוס "חשבון הוצא". מחכים לסיום השמירה לפני ההדפסה,
+  // כדי שהודעת "שומר..." לא תישאר על המסך ובתוך ה-PDF
+  if (printMode === 'invoice') { try { await save(); } catch(e) {} }
+  const tt = document.getElementById('toast'); if (tt) tt.style.display = 'none';
   document.body.classList.add('printing-quote');
   // שם הקובץ ב"שמור כ-PDF" נלקח מכותרת הדף
   const oldTitle = document.title;
