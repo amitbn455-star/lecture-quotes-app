@@ -1034,6 +1034,19 @@ let pendingSave = false;
 let loadOk = false;        // האם הטעינה האחרונה מהגיליון הצליחה
 let lastLoadedCount = 0;   // כמה הצעות נטענו בפעם האחרונה
 
+// ── סיסמת גישה ──
+// כל עוד ה-Apps Script לא דורש סיסמה, שום דבר כאן לא פעיל. ברגע שהשרת עונה error:'unauthorized',
+// האפליקציה מבקשת סיסמה פעם אחת, שומרת אותה במכשיר ושולחת אותה עם כל קריאה.
+function getKey() { try { return localStorage.getItem('quotesKey') || ''; } catch (e) { return ''; } }
+function setKey(k) { try { if (k) localStorage.setItem('quotesKey', k); else localStorage.removeItem('quotesKey'); } catch (e) {} }
+function isUnauthorized(x) { return !!x && typeof x === 'object' && x.error === 'unauthorized'; }
+function askKey() {
+  const k = prompt('נדרשת סיסמת גישה לאפליקציה.\nהכנס אותה (היא תישמר במכשיר הזה):');
+  if (k === null || !k.trim()) return false;
+  setKey(k.trim());
+  return true;
+}
+
 // ════════════════════════
 // GOOGLE SHEETS SYNC
 // ════════════════════════
@@ -1060,7 +1073,10 @@ async function _doSave(silent) {
   let networkFailed = false;
   for (let attempt = 1; attempt <= RETRIES; attempt++) {
     try {
-      const payload = JSON.stringify({ quotes, clients });
+      const body = { quotes, clients };
+      const key = getKey();
+      if (key) body.key = key;
+      const payload = JSON.stringify(body);
       const res = await fetch(SCRIPT_URL, {
         method: 'POST',
         body: payload,
@@ -1068,7 +1084,10 @@ async function _doSave(silent) {
       });
       const result = JSON.parse(await res.text());
       networkFailed = false;
-      if (result.ok) {
+      if (isUnauthorized(result)) {
+        setKey(''); loadOk = false;
+        showToast('הסיסמה לא תקפה — לחץ ↻ והכנס אותה מחדש', true, true);
+      } else if (result.ok) {
         if (!silent) showToast('נשמר ✓');
       } else {
         showToast('שגיאה בשמירה — נסה שוב', true);
@@ -1086,15 +1105,19 @@ async function _doSave(silent) {
   if (pendingSave) await _doSave(false);
 }
 
+let authTries = 0;
 async function loadData() {
   showLoading(true);
   let ok = false;
+  let unauthorized = false;
   for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
     try {
-      const res = await fetch(SCRIPT_URL + '?action=load&t=' + Date.now());
+      const key = getKey();
+      const res = await fetch(SCRIPT_URL + '?action=load&t=' + Date.now() + (key ? '&key=' + encodeURIComponent(key) : ''));
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const text = await res.text();
       const data = text && text.trim() !== '' ? JSON.parse(text) : {};
+      if (isUnauthorized(data)) { unauthorized = true; break; }
       if (!data || typeof data !== 'object' || Array.isArray(data) || data.error) throw new Error('bad payload');
       if (!Array.isArray(data.quotes) && !Array.isArray(data.clients)) {
         // חיבור תקין אבל אין נתונים בגיליון: מותר רק אם גם בעבר לא נטענו נתונים
@@ -1107,6 +1130,12 @@ async function loadData() {
     } catch(e) {
       if (attempt < 3) await new Promise(r => setTimeout(r, 1200));
     }
+  }
+  if (unauthorized && authTries < 3) {
+    authTries++;
+    setKey('');
+    showLoading(false);
+    if (askKey()) return loadData();
   }
   loadOk = ok;
   showLoading(false);
