@@ -2,7 +2,7 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>מערכת הצעות מחיר הרצאה</title>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoi מערכת הצעות מחיר הרצאהIiwic2hvcnRfbmFtZSI6IuGHp+GHlOGHkCIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMDc2MDViIiwidGhlbWVfY29sb3IiOiIjMDc2MDViIn0=">
@@ -87,7 +87,7 @@ body {
   display: flex; align-items: center; justify-content: space-between;
 }
 .topbar-title { font-size: 16px; font-weight: 800; }
-.topbar-sub { font-size: 11px; color: #888; margin-top: 1px; }
+.topbar-sub { font-size:12px; color: #888; margin-top: 1px; }
 .back-btn {
   background: none; border: none; color: #fff;
   font-size: 22px; cursor: pointer; padding: 4px 8px 4px 0;
@@ -104,7 +104,7 @@ body {
   flex: 1; border: none; background: none; cursor: pointer;
   padding: 10px 4px 12px;
   font-family: 'Assistant', sans-serif;
-  font-size: 11px; font-weight: 700;
+  font-size:12px; font-weight: 700;
   color: var(--muted);
   display: flex; flex-direction: column; align-items: center; gap: 3px;
   transition: color .15s;
@@ -121,7 +121,7 @@ body {
   overflow: hidden;
 }
 .card-title {
-  font-size: 10px; font-weight: 700; letter-spacing: .14em;
+  font-size:12px; font-weight: 700; letter-spacing: .14em;
   text-transform: uppercase; color: var(--light);
   padding: 10px 16px 8px;
   border-bottom: 1px solid var(--border);
@@ -133,7 +133,7 @@ body {
 .field { padding: 12px 16px; border-bottom: 1px solid var(--border); }
 .field:last-child { border-bottom: none; }
 .field label {
-  display: block; font-size: 10px; font-weight: 700;
+  display: block; font-size:12px; font-weight: 700;
   letter-spacing: .08em; text-transform: uppercase;
   color: var(--light); margin-bottom: 3px;
 }
@@ -157,7 +157,7 @@ body {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 8px;
 }
-.item-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--light); }
+.item-label { font-size:12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--light); }
 .del-btn { font-size: 18px; color: #ddd; border: none; background: none; cursor: pointer; line-height: 1; }
 .item-desc {
   font-family: 'Assistant', sans-serif; font-size: 16px; font-weight: 600;
@@ -167,7 +167,7 @@ body {
 .item-desc::placeholder { color: #ccc; font-weight: 400; }
 .nums { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 .nums label {
-  font-size: 10px; font-weight: 700; letter-spacing: .07em;
+  font-size:12px; font-weight: 700; letter-spacing: .07em;
   text-transform: uppercase; color: var(--light);
   display: block; margin-bottom: 3px; text-align: center;
 }
@@ -217,7 +217,7 @@ body {
 
 /* ── BADGES ── */
 .badge {
-  display: inline-block; font-size: 10px; font-weight: 700;
+  display: inline-block; font-size:12px; font-weight: 700;
   padding: 2px 8px; border-radius: 6px; letter-spacing: 0;
 }
 .badge-gray   { background: #f0f0ec; color: var(--muted); }
@@ -298,7 +298,7 @@ body {
 
 .items-table { width: 100%; border-collapse: collapse; }
 .items-table th {
-  font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  font-size:12px; font-weight: 700; letter-spacing: .08em;
   text-transform: uppercase; color: var(--light);
   padding: 10px 16px 8px; text-align: right; border-bottom: 1px solid var(--border);
 }
@@ -1187,6 +1187,10 @@ function nextInvNum() {
 }
 
 function fmt(n) { return '₪'+(n||0).toLocaleString('he-IL'); }
+// מנקה טקסט שהוזן (שם לקוח, הערות, תיאורים) לפני הכנסה ל-HTML, כך שתגיות וגרשיים לא ישברו את הדף
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -1225,11 +1229,11 @@ function renderHome() {
       : `<span class="badge badge-gray">הצעה</span>`;
     div.innerHTML = `
       <div class="qi-top">
-        <div class="qi-client">${q.client||'ללא שם'}</div>
-        <div class="qi-date">${q.qdate||''}</div>
+        <div class="qi-client">${esc(q.client||'ללא שם')}</div>
+        <div class="qi-date">${esc(q.qdate||'')}</div>
       </div>
       <div class="qi-bottom">
-        <div class="qi-desc">${statusBadge} ${q.qnum||''}</div>
+        <div class="qi-desc">${statusBadge} ${esc(q.qnum||'')}</div>
         <div class="qi-amount">${fmt(q.grand)}</div>
       </div>`;
     div.onclick = () => openDetail(q.id);
@@ -1300,7 +1304,7 @@ function addItem(d, q, p) {
       <span class="item-label">פריט ${itemN}</span>
       <button class="del-btn" onclick="this.closest('.item-card').remove();renumItems();onItemChange()">✕</button>
     </div>
-    <input class="item-desc" type="text" value="${d||''}" placeholder="תיאור השירות / ההרצאה" oninput="onItemChange()">
+    <input class="item-desc" type="text" value="${esc(d)}" placeholder="תיאור השירות / ההרצאה" oninput="onItemChange()">
     <div class="nums">
       <div><label>כמות</label><input type="number" value="${q||1}" min="1" oninput="calcForm()"></div>
       <div><label>מחיר ₪</label><input type="number" value="${p||0}" min="0" oninput="calcForm()"></div>
@@ -1395,10 +1399,10 @@ function openDetail(id) {
 
   let html = `
     <div class="detail-card" style="margin-top:12px">
-      <div class="detail-row"><span class="dr-label">לקוח</span><span class="dr-val">${currentQ.client||'—'} ${inv}</span></div>
-      <div class="detail-row"><span class="dr-label">תאריך הצעה</span><span class="dr-val">${currentQ.qdate||'—'}</span></div>
-      <div class="detail-row"><span class="dr-label">מספר הצעה</span><span class="dr-val">${currentQ.qnum||'—'}</span></div>
-      <div class="detail-row"><span class="dr-label">תאריך ביצוע</span><span class="dr-val">${currentQ.ldate||'—'}</span></div>
+      <div class="detail-row"><span class="dr-label">לקוח</span><span class="dr-val">${esc(currentQ.client||'—')} ${inv}</span></div>
+      <div class="detail-row"><span class="dr-label">תאריך הצעה</span><span class="dr-val">${esc(currentQ.qdate||'—')}</span></div>
+      <div class="detail-row"><span class="dr-label">מספר הצעה</span><span class="dr-val">${esc(currentQ.qnum||'—')}</span></div>
+      <div class="detail-row"><span class="dr-label">תאריך ביצוע</span><span class="dr-val">${esc(currentQ.ldate||'—')}</span></div>
       <div class="detail-row"><span class="dr-label">סה״כ</span><span class="dr-val">${fmt(currentQ.grand)}</span></div>
     </div>
     <div class="detail-card">
@@ -1406,11 +1410,11 @@ function openDetail(id) {
         <thead><tr><th>תיאור</th><th class="tc">כמות</th><th class="tc">מחיר</th><th class="tc">סה״כ</th></tr></thead>
         <tbody>`;
   (currentQ.items||[]).forEach(it=>{
-    html += `<tr><td>${it.desc}</td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(it.qty*it.price)}</td></tr>`;
+    html += `<tr><td>${esc(it.desc)}</td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(it.qty*it.price)}</td></tr>`;
   });
   html += `</tbody></table></div>`;
   if (currentQ.notes) {
-    html += `<div class="detail-card"><div class="detail-row"><span class="dr-label">הערות</span><span class="dr-val" style="font-size:13px;max-width:70%;text-align:left">${currentQ.notes}</span></div></div>`;
+    html += `<div class="detail-card"><div class="detail-row"><span class="dr-label">הערות</span><span class="dr-val" style="font-size:13px;max-width:70%;text-align:left">${esc(currentQ.notes)}</span></div></div>`;
   }
   document.getElementById('d-content').innerHTML = html;
   showScreen('screen-detail');
@@ -1466,7 +1470,7 @@ function openInvoiceFlow() {
   (currentQ.items||[]).forEach(it=>{
     const d = document.createElement('div');
     d.style.cssText = 'padding:11px 16px;border-bottom:1px solid var(--border);font-size:14px;display:flex;justify-content:space-between;align-items:center';
-    d.innerHTML = `<span style="flex:1">${it.desc}</span><span style="color:var(--muted);margin-left:8px">${it.qty}×${fmt(it.price)}</span><span style="font-weight:700;margin-right:8px">${fmt(it.qty*it.price)}</span>`;
+    d.innerHTML = `<span style="flex:1">${esc(it.desc)}</span><span style="color:var(--muted);margin-left:8px">${it.qty}×${fmt(it.price)}</span><span style="font-weight:700;margin-right:8px">${fmt(it.qty*it.price)}</span>`;
     baseDiv.appendChild(d);
   });
 
@@ -1489,7 +1493,7 @@ function addExtraItem(d, q, p) {
       <span class="item-label" style="color:var(--orange)">תוספת ${extraN}</span>
       <button class="del-btn" onclick="this.closest('.extra-item-card').remove();onInvChange()">✕</button>
     </div>
-    <input class="item-desc" type="text" value="${d||''}" placeholder="תיאור התוספת" oninput="onInvChange()" style="font-family:'Assistant',sans-serif;font-size:16px;font-weight:600;border:none;width:100%;background:transparent;outline:none;direction:rtl;text-align:right;margin-bottom:10px">
+    <input class="item-desc" type="text" value="${esc(d)}" placeholder="תיאור התוספת" oninput="onInvChange()" style="font-family:'Assistant',sans-serif;font-size:16px;font-weight:600;border:none;width:100%;background:transparent;outline:none;direction:rtl;text-align:right;margin-bottom:10px">
     <div class="nums">
       <div><label>כמות</label><input type="number" value="${q||1}" min="1" oninput="calcInvoice()"></div>
       <div><label>מחיר ₪</label><input type="number" value="${p||0}" min="0" oninput="calcInvoice()"></div>
@@ -1615,11 +1619,11 @@ function renderTracker() {
   summary.style.cssText = 'display:flex;gap:8px;padding:0 12px 4px;';
   summary.innerHTML = `
     <div style="flex:1;background:#fff;border:1px solid #e2e0d8;border-radius:12px;padding:12px 14px">
-      <div style="font-size:10px;font-weight:700;color:#aaa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">סה״כ הצעות</div>
+      <div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">סה״כ הצעות</div>
       <div style="font-size:17px;font-weight:800">${fmt(total)}</div>
     </div>
     <div style="flex:1;background:#f3e5f5;border:1px solid #ce93d8;border-radius:12px;padding:12px 14px">
-      <div style="font-size:10px;font-weight:700;color:#6a1b9a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">שולם</div>
+      <div style="font-size:12px;font-weight:700;color:#6a1b9a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">שולם</div>
       <div style="font-size:17px;font-weight:800;color:#6a1b9a">${fmt(paid)}</div>
     </div>`;
   list.appendChild(summary);
@@ -1629,8 +1633,8 @@ function renderTracker() {
     div.className = 'tracker-row';
     div.innerHTML = `
       <div class="tracker-info">
-        <div class="tracker-client">${q.client||'ללא שם'}</div>
-        <div class="tracker-meta">${q.qnum||''} · ${q.qdate||''}</div>
+        <div class="tracker-client">${esc(q.client||'ללא שם')}</div>
+        <div class="tracker-meta">${esc(q.qnum||'')} · ${esc(q.qdate||'')}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
         <span class="tracker-amount">${fmt(q.grand)}</span>
@@ -1693,11 +1697,11 @@ function renderReceipts() {
   const summaryEl = document.getElementById('rec-summary');
   summaryEl.innerHTML = `
     <div style="flex:1;background:#f3e5f5;border:1px solid #ce93d8;border-radius:12px;padding:12px 14px">
-      <div style="font-size:10px;font-weight:700;color:#6a1b9a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">סה״כ התקבל</div>
+      <div style="font-size:12px;font-weight:700;color:#6a1b9a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">סה״כ התקבל</div>
       <div style="font-size:17px;font-weight:800;color:#6a1b9a">${fmt(total)}</div>
     </div>
     <div style="flex:1;background:#fff;border:1px solid #e2e0d8;border-radius:12px;padding:12px 14px">
-      <div style="font-size:10px;font-weight:700;color:#aaa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">מספר קבלות</div>
+      <div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">מספר קבלות</div>
       <div style="font-size:17px;font-weight:800">${filtered.length}</div>
     </div>`;
 
@@ -1725,14 +1729,14 @@ function renderReceipts() {
     div.innerHTML = `
       <div style="padding:14px 16px;cursor:pointer" onclick="openReceiptFromList('${q.id}')">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-          <div style="font-size:16px;font-weight:700">${q.client||'ללא שם'}</div>
+          <div style="font-size:16px;font-weight:700">${esc(q.client||'ללא שם')}</div>
           <div style="font-size:16px;font-weight:800;color:#6a1b9a">${fmt(q.recGrand||0)}</div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-size:12px;color:#888">${q.recNum||''} · ${q.recDate||''}</div>
-          <div style="font-size:12px;color:#888">${methodIcon} ${q.recMethod||''}</div>
+          <div style="font-size:12px;color:#888">${esc(q.recNum||'')} · ${esc(q.recDate||'')}</div>
+          <div style="font-size:12px;color:#888">${methodIcon} ${esc(q.recMethod||'')}</div>
         </div>
-        ${q.recRef ? `<div style="font-size:11px;color:#aaa;margin-top:4px">${q.recRef}</div>` : ''}
+        ${q.recRef ? `<div style="font-size:12px;color:#aaa;margin-top:4px">${esc(q.recRef)}</div>` : ''}
       </div>
       <div style="border-top:1px solid #f0eeea;display:flex">
         <button onclick="generateReceiptPdfFromList('${q.id}')"
@@ -1837,8 +1841,8 @@ function renderWaiting() {
     const daysLabel = days < 0 ? '' : days === 0 ? 'היום' : days === 1 ? 'יום אחד' : days + ' ימים';
     div.innerHTML = `
       <div class="tracker-info">
-        <div class="tracker-client">${q.client||'ללא שם'}</div>
-        <div class="tracker-meta">${q.invNum||''} · ${q.invDate||''}</div>
+        <div class="tracker-client">${esc(q.client||'ללא שם')}</div>
+        <div class="tracker-meta">${esc(q.invNum||'')} · ${esc(q.invDate||'')}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
         <span class="tracker-amount">${fmt(q.grand)}</span>
@@ -1872,8 +1876,8 @@ function renderClients() {
     div.className = 'client-item';
     div.innerHTML = `
       <div>
-        <div class="ci-name">${c.name}</div>
-        <div class="ci-sub">${c.phone||''} ${c.email?'· '+c.email:''}</div>
+        <div class="ci-name">${esc(c.name)}</div>
+        <div class="ci-sub">${esc(c.phone||'')} ${c.email?'· '+esc(c.email):''}</div>
       </div>
       <span class="ci-count">${qCount} הצעות</span>`;
     list.appendChild(div);
@@ -1939,7 +1943,7 @@ function fillPdfQuote() {
   tbody.innerHTML = '';
   (q.items||[]).forEach(it=>{
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${it.desc}</td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(it.qty*it.price)}</td>`;
+    tr.innerHTML = `<td>${esc(it.desc)}</td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(it.qty*it.price)}</td>`;
     tbody.appendChild(tr);
   });
 
@@ -2016,15 +2020,15 @@ function fillPdfInvoice() {
     const line = it.qty*it.price; baseSub += line;
     const tr = document.createElement('tr');
     tr.innerHTML = hasExtras
-      ? `<td>${it.desc}</td><td class="tc"><span class="pdf-tag base">הצעה</span></td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(line)}</td>`
-      : `<td>${it.desc}</td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(line)}</td>`;
+      ? `<td>${esc(it.desc)}</td><td class="tc"><span class="pdf-tag base">הצעה</span></td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(line)}</td>`
+      : `<td>${esc(it.desc)}</td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(line)}</td>`;
     tbody.appendChild(tr);
   });
   extras.forEach(it=>{
     const line = it.qty*it.price; extraSub += line;
     const tr = document.createElement('tr');
     tr.className = 'extra-row';
-    tr.innerHTML = `<td>${it.desc}</td><td class="tc"><span class="pdf-tag extra">תוספת</span></td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(line)}</td>`;
+    tr.innerHTML = `<td>${esc(it.desc)}</td><td class="tc"><span class="pdf-tag extra">תוספת</span></td><td class="tc">${it.qty}</td><td class="tc">${fmt(it.price)}</td><td class="tc">${fmt(line)}</td>`;
     tbody.appendChild(tr);
   });
 
@@ -2115,7 +2119,7 @@ function addRecItem(d, q, p) {
       <span class="item-label">שורה ${recN}</span>
       <button class="del-btn" onclick="this.closest('.item-card').remove();calcRec()">✕</button>
     </div>
-    <input class="item-desc" type="text" value="${d||''}" placeholder="פירוט" oninput="calcRec()">
+    <input class="item-desc" type="text" value="${esc(d)}" placeholder="פירוט" oninput="calcRec()">
     <div class="nums">
       <div><label>כמות</label><input type="number" value="${q||1}" min="1" oninput="calcRec()"></div>
       <div><label>מחיר ₪</label><input type="number" value="${p||0}" min="0" oninput="calcRec()"></div>
