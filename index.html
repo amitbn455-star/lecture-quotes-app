@@ -49,8 +49,8 @@
   --card: #ffffff;
   --border: #e2e0d8;
   --text: #111;
-  --muted: #888;
-  --light: #aaa;
+  --muted: #5f5f5f;
+  --light: #6a6a6a;
   --accent: #111;
   --accent-fg: #fff;
   --green: #1a6b3a;
@@ -90,7 +90,7 @@ body {
 .topbar-sub { font-size:12px; color: #888; margin-top: 1px; }
 .back-btn {
   background: none; border: none; color: #fff;
-  font-size: 22px; cursor: pointer; padding: 4px 8px 4px 0;
+  font-size: 22px; cursor: pointer; padding: 4px 8px 4px 0; min-width: 44px; min-height: 40px;
   font-family: 'Assistant', sans-serif;
 }
 
@@ -145,7 +145,10 @@ body {
   -webkit-appearance: none; appearance: none;
 }
 .field textarea { resize: none; min-height: 44px; line-height: 1.5; }
-.field input::placeholder, .field textarea::placeholder { color: #ccc; font-weight: 400; }
+/* סימון ברור לניווט במקלדת */
+button:focus-visible, a:focus-visible, [onclick]:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
+.field:focus-within { box-shadow: inset 0 -2px 0 #1a73e8; }
+.field input::placeholder, .field textarea::placeholder { color: #767676; font-weight: 400; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; }
 .row2 .field { border-bottom: none; }
 .row2 .field:last-child { border-right: 1px solid var(--border); }
@@ -158,13 +161,13 @@ body {
   margin-bottom: 8px;
 }
 .item-label { font-size:12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--light); }
-.del-btn { font-size: 18px; color: #ddd; border: none; background: none; cursor: pointer; line-height: 1; }
+.del-btn { font-size: 18px; color: #767676; border: none; background: none; cursor: pointer; line-height: 1; padding: 10px; min-width: 40px; min-height: 40px; }
 .item-desc {
   font-family: 'Assistant', sans-serif; font-size: 16px; font-weight: 600;
   color: var(--text); border: none; width: 100%; background: transparent;
   outline: none; direction: rtl; text-align: right; margin-bottom: 10px;
 }
-.item-desc::placeholder { color: #ccc; font-weight: 400; }
+.item-desc::placeholder { color: #767676; font-weight: 400; }
 .nums { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 .nums label {
   font-size:12px; font-weight: 700; letter-spacing: .07em;
@@ -370,7 +373,7 @@ body {
   font-size: 12px; font-weight: 700; padding: 4px 10px;
   border-radius: 20px; cursor: pointer;
 }
-.status-pending  { background: #fff8e1; color: #f57f17; }
+.status-pending  { background: #fff8e1; color: #8f4b00; }
 .status-approved { background: #e8f5ee; color: #1a6b3a; }
 .status-rejected { background: #fdecea; color: #c0392b; }
 .status-invoiced { background: #e3f2fd; color: #1565c0; }
@@ -464,7 +467,7 @@ body {
       <div class="topbar-title">מערכת הצעות מחיר</div>
       <div class="topbar-sub">הרצאות</div>
     </div>
-    <button onclick="loadData()" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer">↻</button>
+    <button onclick="loadData()" aria-label="טעינה מחדש" style="background:none;border:none;color:#888;font-size:20px;cursor:pointer;padding:8px 10px">↻</button>
   </div>
 
   <div id="home-list">
@@ -496,24 +499,24 @@ body {
   <div class="card" style="margin-top:12px">
     <div class="card-title">
       <span>פרטי לקוח</span>
-      <button onclick="openClientPicker()" style="background:none;border:none;font-family:'Assistant',sans-serif;font-size:12px;font-weight:700;color:#888;cursor:pointer">📂 שמור / טען</button>
+      <button onclick="openClientPicker()" style="background:none;border:none;font-family:'Assistant',sans-serif;font-size:12px;font-weight:700;color:#5f5f5f;cursor:pointer;padding:12px 8px">📂 שמור / טען</button>
     </div>
     <div class="field">
-      <label>שם הלקוח / הארגון</label>
+      <label for="f-client">שם הלקוח / הארגון</label>
       <input type="text" id="f-client" placeholder="למשל: עיריית תל אביב">
     </div>
     <div class="row2">
       <div class="field">
-        <label>טלפון</label>
+        <label for="f-cphone">טלפון</label>
         <input type="tel" id="f-cphone" placeholder="05X-XXXXXXX">
       </div>
       <div class="field">
-        <label>מייל</label>
+        <label for="f-cemail">מייל</label>
         <input type="email" id="f-cemail" placeholder="name@org.com">
       </div>
     </div>
     <div class="field">
-      <label>ח.פ. / ע.מ. (אופציונלי)</label>
+      <label for="f-cid">ח.פ. / ע.מ. (אופציונלי)</label>
       <input type="text" id="f-cid" placeholder="">
     </div>
   </div>
@@ -523,21 +526,21 @@ body {
     <div class="card-title">פרטי הצעה</div>
     <div class="row2">
       <div class="field">
-        <label>תאריך הצעה</label>
+        <label for="f-qdate">תאריך הצעה</label>
         <input type="text" id="f-qdate" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
       </div>
       <div class="field">
-        <label>מספר הצעה</label>
+        <label for="f-qnum">מספר הצעה</label>
         <input type="text" id="f-qnum" placeholder="2026-001">
       </div>
     </div>
     <div class="row2">
       <div class="field">
-        <label>תאריך ההרצאה</label>
+        <label for="f-ldate">תאריך ההרצאה</label>
         <input type="text" id="f-ldate" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
       </div>
       <div class="field">
-        <label>בתוקף עד</label>
+        <label for="f-valid">בתוקף עד</label>
         <input type="text" id="f-valid" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
       </div>
     </div>
@@ -557,7 +560,7 @@ body {
     <div class="sum-row">
       <span class="sl">הנחה</span>
       <div class="disc-wrap">
-        <input type="number" id="f-disc" value="0" min="0" max="100" oninput="calcForm()">
+        <input type="number" aria-label="הנחה באחוזים" id="f-disc" value="0" min="0" max="100" oninput="calcForm()">
         <span style="font-weight:700;color:var(--muted)">%</span>
       </div>
     </div>
@@ -567,7 +570,7 @@ body {
   <div class="card">
     <div class="card-title">צורת תשלום</div>
     <div class="field">
-      <label>תנאי תשלום</label>
+      <label for="f-payment">תנאי תשלום</label>
       <input type="text" id="f-payment" placeholder="למשל: שוטף+30, מזומן, העברה בנקאית">
     </div>
   </div>
@@ -575,7 +578,7 @@ body {
   <div class="card" style="margin-bottom:12px">
     <div class="card-title">הערות</div>
     <div class="field">
-      <textarea id="f-notes" placeholder="הערות נוספות..." rows="3"></textarea>
+      <textarea aria-label="הערות" id="f-notes" placeholder="הערות נוספות..." rows="3"></textarea>
     </div>
   </div>
 
@@ -640,16 +643,16 @@ body {
     <div class="card-title">פרטי חשבון</div>
     <div class="row2">
       <div class="field">
-        <label>תאריך חשבון</label>
+        <label for="inv-date">תאריך חשבון</label>
         <input type="text" id="inv-date" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
       </div>
       <div class="field">
-        <label>מספר חשבון</label>
+        <label for="inv-num">מספר חשבון</label>
         <input type="text" id="inv-num" placeholder="INV-2026-001">
       </div>
     </div>
     <div class="field">
-      <label>תשלום עד תאריך</label>
+      <label for="inv-due">תשלום עד תאריך</label>
       <input type="text" id="inv-due" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
     </div>
   </div>
@@ -672,7 +675,7 @@ body {
     <div class="sum-row" id="inv-disc-row" style="display:none">
       <span class="sl">הנחה</span>
       <div class="disc-wrap">
-        <input type="number" id="inv-disc" value="0" min="0" max="100" oninput="calcInvoice()">
+        <input type="number" aria-label="הנחה באחוזים" id="inv-disc" value="0" min="0" max="100" oninput="calcInvoice()">
         <span style="font-weight:700;color:var(--muted)">%</span>
       </div>
     </div>
@@ -682,7 +685,7 @@ body {
   <div class="card">
     <div class="card-title">תנאי תשלום</div>
     <div class="field">
-      <label>צורת תשלום</label>
+      <label for="inv-payment">צורת תשלום</label>
       <input type="text" id="inv-payment" placeholder="למשל: שוטף+30">
     </div>
   </div>
@@ -703,7 +706,7 @@ body {
   <div class="card" style="margin-bottom:12px">
     <div class="card-title">הערות</div>
     <div class="field">
-      <textarea id="inv-notes" placeholder="הערות נוספות..." rows="2"></textarea>
+      <textarea aria-label="הערות" id="inv-notes" placeholder="הערות נוספות..." rows="2"></textarea>
     </div>
   </div>
 
@@ -732,11 +735,11 @@ body {
     <div class="card-title">פרטי קבלה</div>
     <div class="row2">
       <div class="field">
-        <label>תאריך קבלה</label>
+        <label for="rec-date">תאריך קבלה</label>
         <input type="text" id="rec-date" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
       </div>
       <div class="field">
-        <label>מספר קבלה</label>
+        <label for="rec-num">מספר קבלה</label>
         <input type="text" id="rec-num" placeholder="REC-2026-001">
       </div>
     </div>
@@ -745,7 +748,7 @@ body {
   <div class="card">
     <div class="card-title">מקור / הפניה</div>
     <div class="field">
-      <label>בהתאם ל (אופציונלי)</label>
+      <label for="rec-ref">בהתאם ל (אופציונלי)</label>
       <input type="text" id="rec-ref" placeholder="למשל: חשבון עסקה INV-2026-001">
     </div>
   </div>
@@ -764,7 +767,7 @@ body {
   <div class="card">
     <div class="card-title">אמצעי תשלום</div>
     <div class="field">
-      <label>אמצעי תשלום</label>
+      <label for="rec-method">אמצעי תשלום</label>
       <select id="rec-method" style="font-family:'Assistant',sans-serif;font-size:16px;font-weight:600;color:var(--text);border:none;width:100%;background:transparent;outline:none;direction:rtl;text-align:right;-webkit-appearance:none;appearance:none">
         <option value="העברה בנקאית">העברה בנקאית</option>
         <option value="מזומן">מזומן</option>
@@ -776,11 +779,11 @@ body {
     </div>
     <div class="row2">
       <div class="field">
-        <label>תאריך תשלום</label>
+        <label for="rec-pay-date">תאריך תשלום</label>
         <input type="text" id="rec-pay-date" maxlength="10" inputmode="numeric" oninput="fmtDate(this)" placeholder="DD.MM.YYYY">
       </div>
       <div class="field">
-        <label>מס׳ אסמכתא / המחאה</label>
+        <label for="rec-ref-num">מס׳ אסמכתא / המחאה</label>
         <input type="text" id="rec-ref-num" placeholder="אופציונלי">
       </div>
     </div>
@@ -789,7 +792,7 @@ body {
   <div class="card" style="margin-bottom:12px">
     <div class="card-title">הערות</div>
     <div class="field">
-      <textarea id="rec-notes" placeholder="הערות נוספות..." rows="2"></textarea>
+      <textarea aria-label="הערות" id="rec-notes" placeholder="הערות נוספות..." rows="2"></textarea>
     </div>
   </div>
 
@@ -1216,6 +1219,8 @@ function nextInvNum() {
 }
 
 function fmt(n) { return '₪'+(n||0).toLocaleString('he-IL'); }
+// עיגול לאגורות, כדי שלא יישמרו סכומים כמו 500.000001
+function r2(n) { return Math.round((Number(n) + Number.EPSILON) * 100) / 100; }
 // מנקה טקסט שהוזן (שם לקוח, הערות, תיאורים) לפני הכנסה ל-HTML, כך שתגיות וגרשיים לא ישברו את הדף
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1333,11 +1338,11 @@ function addItem(d, q, p) {
       <span class="item-label">פריט ${itemN}</span>
       <button class="del-btn" onclick="this.closest('.item-card').remove();renumItems();onItemChange()">✕</button>
     </div>
-    <input class="item-desc" type="text" value="${esc(d)}" placeholder="תיאור השירות / ההרצאה" oninput="onItemChange()">
+    <input class="item-desc" type="text" aria-label="תיאור השירות" value="${esc(d)}" placeholder="תיאור השירות / ההרצאה" oninput="onItemChange()">
     <div class="nums">
-      <div><label>כמות</label><input type="number" value="${q||1}" min="1" oninput="calcForm()"></div>
-      <div><label>מחיר ₪</label><input type="number" value="${p||0}" min="0" oninput="calcForm()"></div>
-      <div class="tot"><label>סה״כ</label><input type="text" readonly tabindex="-1"></div>
+      <div><label>כמות</label><input type="number" aria-label="כמות" value="${q||1}" min="1" oninput="calcForm()"></div>
+      <div><label>מחיר ₪</label><input type="number" aria-label="מחיר" value="${p||0}" min="0" oninput="calcForm()"></div>
+      <div class="tot"><label>סה״כ</label><input type="text" aria-label="סה״כ שורה" readonly tabindex="-1"></div>
     </div>`;
   document.getElementById('f-items-list').appendChild(el);
   calcForm();
@@ -1359,7 +1364,7 @@ function calcForm() {
     sub += line;
   });
   const disc  = parseFloat(document.getElementById('f-disc').value)||0;
-  const grand = sub*(1-disc/100);
+  const grand = r2(sub*(1-disc/100));
   document.getElementById('f-sub').textContent   = fmt(sub);
   document.getElementById('f-grand').textContent = fmt(grand);
 }
@@ -1372,8 +1377,8 @@ function getFormData() {
   });
   syncTravel('f', false);
   const disc  = parseFloat(document.getElementById('f-disc').value)||0;
-  const sub   = items.reduce((a,i)=>a+i.qty*i.price,0);
-  const grand = sub*(1-disc/100);
+  const sub   = r2(items.reduce((a,i)=>a+i.qty*i.price,0));
+  const grand = r2(sub*(1-disc/100));
   return {
     client: document.getElementById('f-client').value,
     cphone: document.getElementById('f-cphone').value,
@@ -1522,11 +1527,11 @@ function addExtraItem(d, q, p) {
       <span class="item-label" style="color:var(--orange)">תוספת ${extraN}</span>
       <button class="del-btn" onclick="this.closest('.extra-item-card').remove();onInvChange()">✕</button>
     </div>
-    <input class="item-desc" type="text" value="${esc(d)}" placeholder="תיאור התוספת" oninput="onInvChange()" style="font-family:'Assistant',sans-serif;font-size:16px;font-weight:600;border:none;width:100%;background:transparent;outline:none;direction:rtl;text-align:right;margin-bottom:10px">
+    <input class="item-desc" type="text" aria-label="תיאור התוספת" value="${esc(d)}" placeholder="תיאור התוספת" oninput="onInvChange()" style="font-family:'Assistant',sans-serif;font-size:16px;font-weight:600;border:none;width:100%;background:transparent;outline:none;direction:rtl;text-align:right;margin-bottom:10px">
     <div class="nums">
-      <div><label>כמות</label><input type="number" value="${q||1}" min="1" oninput="calcInvoice()"></div>
-      <div><label>מחיר ₪</label><input type="number" value="${p||0}" min="0" oninput="calcInvoice()"></div>
-      <div class="tot"><label>סה״כ</label><input type="text" readonly tabindex="-1"></div>
+      <div><label>כמות</label><input type="number" aria-label="כמות" value="${q||1}" min="1" oninput="calcInvoice()"></div>
+      <div><label>מחיר ₪</label><input type="number" aria-label="מחיר" value="${p||0}" min="0" oninput="calcInvoice()"></div>
+      <div class="tot"><label>סה״כ</label><input type="text" aria-label="סה״כ שורה" readonly tabindex="-1"></div>
     </div>`;
   document.getElementById('inv-extra-list').appendChild(el);
   calcInvoice();
@@ -1542,7 +1547,7 @@ function calcInvoice() {
     extraSub += line;
   });
   const disc  = parseFloat(document.getElementById('inv-disc').value)||0;
-  const grand = (baseSub + extraSub) * (1 - disc/100);
+  const grand = r2((baseSub + extraSub) * (1 - disc/100));
   document.getElementById('inv-base-sub').textContent  = fmt(baseSub);
   document.getElementById('inv-extra-sub').textContent = fmt(extraSub);
   document.getElementById('inv-grand').textContent     = fmt(grand);
@@ -1616,8 +1621,8 @@ function renderTracker() {
     const isActive = (y === 'הכל' && !trackerYear) || y === trackerYear;
     btn.textContent = y;
     btn.style.cssText = `font-family:'Assistant',sans-serif;font-size:13px;font-weight:700;
-      padding:6px 14px;border-radius:20px;border:none;cursor:pointer;white-space:nowrap;
-      background:${isActive ? '#111' : '#fff'};color:${isActive ? '#fff' : '#888'};
+      padding:6px 14px;min-height:36px;border-radius:20px;border:none;cursor:pointer;white-space:nowrap;
+      background:${isActive ? '#111' : '#fff'};color:${isActive ? '#fff' : '#5f5f5f'};
       border:1.5px solid ${isActive ? '#111' : '#ddd'}`;
     btn.onclick = () => {
       trackerYear = y === 'הכל' ? null : y;
@@ -1648,7 +1653,7 @@ function renderTracker() {
   summary.style.cssText = 'display:flex;gap:8px;padding:0 12px 4px;';
   summary.innerHTML = `
     <div style="flex:1;background:#fff;border:1px solid #e2e0d8;border-radius:12px;padding:12px 14px">
-      <div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">סה״כ הצעות</div>
+      <div style="font-size:12px;font-weight:700;color:#6a6a6a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">סה״כ הצעות</div>
       <div style="font-size:17px;font-weight:800">${fmt(total)}</div>
     </div>
     <div style="flex:1;background:#f3e5f5;border:1px solid #ce93d8;border-radius:12px;padding:12px 14px">
@@ -1707,8 +1712,8 @@ function renderReceipts() {
     const isActive = (y === 'הכל' && !receiptsYear) || y === receiptsYear;
     btn.textContent = y;
     btn.style.cssText = `font-family:'Assistant',sans-serif;font-size:13px;font-weight:700;
-      padding:6px 14px;border-radius:20px;border:none;cursor:pointer;white-space:nowrap;
-      background:${isActive ? '#6a1b9a' : '#fff'};color:${isActive ? '#fff' : '#888'};
+      padding:6px 14px;min-height:36px;border-radius:20px;border:none;cursor:pointer;white-space:nowrap;
+      background:${isActive ? '#6a1b9a' : '#fff'};color:${isActive ? '#fff' : '#5f5f5f'};
       border:1.5px solid ${isActive ? '#6a1b9a' : '#ddd'}`;
     btn.onclick = () => { receiptsYear = y === 'הכל' ? null : y; renderReceipts(); };
     filterEl.appendChild(btn);
@@ -1730,7 +1735,7 @@ function renderReceipts() {
       <div style="font-size:17px;font-weight:800;color:#6a1b9a">${fmt(total)}</div>
     </div>
     <div style="flex:1;background:#fff;border:1px solid #e2e0d8;border-radius:12px;padding:12px 14px">
-      <div style="font-size:12px;font-weight:700;color:#aaa;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">מספר קבלות</div>
+      <div style="font-size:12px;font-weight:700;color:#6a6a6a;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px">מספר קבלות</div>
       <div style="font-size:17px;font-weight:800">${filtered.length}</div>
     </div>`;
 
@@ -1762,10 +1767,10 @@ function renderReceipts() {
           <div style="font-size:16px;font-weight:800;color:#6a1b9a">${fmt(q.recGrand||0)}</div>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-size:12px;color:#888">${esc(q.recNum||'')} · ${esc(q.recDate||'')}</div>
-          <div style="font-size:12px;color:#888">${methodIcon} ${esc(q.recMethod||'')}</div>
+          <div style="font-size:12px;color:#5f5f5f">${esc(q.recNum||'')} · ${esc(q.recDate||'')}</div>
+          <div style="font-size:12px;color:#5f5f5f">${methodIcon} ${esc(q.recMethod||'')}</div>
         </div>
-        ${q.recRef ? `<div style="font-size:12px;color:#aaa;margin-top:4px">${esc(q.recRef)}</div>` : ''}
+        ${q.recRef ? `<div style="font-size:12px;color:#6a6a6a;margin-top:4px">${esc(q.recRef)}</div>` : ''}
       </div>
       <div style="border-top:1px solid #f0eeea;display:flex">
         <button onclick="generateReceiptPdfFromList('${q.id}')"
@@ -1776,7 +1781,7 @@ function renderReceipts() {
         <div style="width:1px;background:#f0eeea"></div>
         <button onclick="openDetail('${q.id}')"
           style="flex:1;font-family:'Assistant',sans-serif;font-size:13px;font-weight:700;
-          background:none;border:none;padding:11px;cursor:pointer;color:#888">
+          background:none;border:none;padding:11px;cursor:pointer;color:#5f5f5f">
           📋 הצעה מקורית
         </button>
         <div style="width:1px;background:#f0eeea"></div>
@@ -1980,7 +1985,7 @@ function fillPdfQuote() {
   document.getElementById('pdf-base-row').style.display = 'none';
   document.getElementById('pdf-extra-row').style.display = 'none';
   document.getElementById('pdf-disc-row').style.display  = disc>0 ? 'flex' : 'none';
-  if (disc>0) document.getElementById('pdf-disc-val').textContent = disc+'%';
+  if (disc>0) document.getElementById('pdf-disc-val').textContent = r2(disc)+'%';
   document.getElementById('pdf-grand').textContent = fmt(q.grand);
 
   const notes = q.notes||'';
@@ -2063,13 +2068,13 @@ function fillPdfInvoice() {
 
   const invDisc = parseFloat(document.getElementById('inv-disc').value)||0;
   // שמירת invGrand עכשיו שbaseSub ו-extraSub ידועים
-  if (idx>=0) quotes[idx].invGrand = (baseSub+extraSub)*(1-invDisc/100);
+  if (idx>=0) quotes[idx].invGrand = r2((baseSub+extraSub)*(1-invDisc/100));
   document.getElementById('pdf-base-row').style.display  = hasExtras ? 'flex' : 'none';
   document.getElementById('pdf-base-sub').textContent    = fmt(baseSub);
   document.getElementById('pdf-extra-row').style.display = hasExtras ? 'flex' : 'none';
   document.getElementById('pdf-extra-sub').textContent   = fmt(extraSub);
   document.getElementById('pdf-disc-row').style.display  = invDisc>0 ? 'flex' : 'none';
-  if (invDisc>0) document.getElementById('pdf-disc-val').textContent = invDisc+'%';
+  if (invDisc>0) document.getElementById('pdf-disc-val').textContent = r2(invDisc)+'%';
   document.getElementById('pdf-grand').textContent = fmt((baseSub+extraSub)*(1-invDisc/100));
 
   const notes = invNotes||'';
@@ -2148,11 +2153,11 @@ function addRecItem(d, q, p) {
       <span class="item-label">שורה ${recN}</span>
       <button class="del-btn" onclick="this.closest('.item-card').remove();calcRec()">✕</button>
     </div>
-    <input class="item-desc" type="text" value="${esc(d)}" placeholder="פירוט" oninput="calcRec()">
+    <input class="item-desc" type="text" aria-label="פירוט" value="${esc(d)}" placeholder="פירוט" oninput="calcRec()">
     <div class="nums">
-      <div><label>כמות</label><input type="number" value="${q||1}" min="1" oninput="calcRec()"></div>
-      <div><label>מחיר ₪</label><input type="number" value="${p||0}" min="0" oninput="calcRec()"></div>
-      <div class="tot"><label>סה״כ</label><input type="text" readonly tabindex="-1"></div>
+      <div><label>כמות</label><input type="number" aria-label="כמות" value="${q||1}" min="1" oninput="calcRec()"></div>
+      <div><label>מחיר ₪</label><input type="number" aria-label="מחיר" value="${p||0}" min="0" oninput="calcRec()"></div>
+      <div class="tot"><label>סה״כ</label><input type="text" aria-label="סה״כ שורה" readonly tabindex="-1"></div>
     </div>`;
   document.getElementById('rec-items-list').appendChild(el);
   calcRec();
@@ -2189,7 +2194,7 @@ function getRecData() {
     recRefNum:  document.getElementById('rec-ref-num').value,
     recNotes:   document.getElementById('rec-notes').value,
     recItems,
-    recGrand:   recItems.reduce((a,i)=>a+i.qty*i.price, 0)
+    recGrand:   r2(recItems.reduce((a,i)=>a+i.qty*i.price, 0))
   };
 }
 
